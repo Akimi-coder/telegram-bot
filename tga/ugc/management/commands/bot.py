@@ -91,13 +91,6 @@ def get_data(coin1="btc", coin2="usd"):
     return f"{datetime.now().strftime('%Y-%m-%d %H:%M')}\nSell BTC price: {round(sell_price, 2)} $"
 
 
-def get_price(coin1="btc", coin2="usd"):
-    req = requests.get(url=f"https://yobit.net/api/3/ticker/{coin1}_{coin2}?ignore_invalid=1")
-    response = req.json()
-    sell_price = response[f"{coin1}_{coin2}"]["sell"]
-    return round(sell_price, 2)
-
-
 class Command(BaseCommand):
     help = "Telegram-Bot"
 
@@ -170,13 +163,14 @@ class Command(BaseCommand):
             )
             Requisites(
                 profile=p,
-                btcPrice=price / get_price(),
+                btcPrice=price / get_btc_to_rub(),
                 fiatPrice=str(price) + " ₽",
             ).save()
 
         @bot.callback_query_handler(func=lambda call: call.data == "confirm")
         def confirm(call):
             res = re.findall(r"([+-]?([0-9]+([.][0-9]*)?|[.][0-9]+))(\s₽)", call.message.text)
+            print(res[0][0])
             price = float(res[0][0])
             keyboard = types.InlineKeyboardMarkup()
             keyboard.row(types.InlineKeyboardButton(text="Status", callback_data="status"))
@@ -193,7 +187,7 @@ class Command(BaseCommand):
                 )
                 Message(
                     profile=p,
-                    btcPrice=price / get_price(),
+                    btcPrice=price / get_btc_to_rub(),
                     fiatPrice=str(price) + " ₽",
                     status="send"
                 ).save()
