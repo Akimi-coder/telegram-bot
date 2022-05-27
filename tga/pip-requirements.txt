@@ -1,0 +1,6 @@
+django
+python-telegram-bot
+pyTelegramBotApi
+requests
+beautifulsoup4
+datetime
