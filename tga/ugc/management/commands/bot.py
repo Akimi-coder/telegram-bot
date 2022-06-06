@@ -28,11 +28,13 @@ def get_info():
 
     return response.text
 
+
 def get_btc_to_rub(coin1="BTC", coin2="RUB"):
     r = requests.get(f"https://freecurrencyrates.com/en/convert-{coin1}-{coin2}")
     soup = BeautifulSoup(r.content, "html.parser")
     res = soup.find(id="value_to")
     return float(res['value'])
+
 
 # Инфа о парах за последние 24 часа
 def get_ticker(coin1="btc", coin2="usd"):
@@ -96,6 +98,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         bot = telebot.TeleBot(settings.TOKEN)
+        self.stdout.write("Bot started")
+
 
         @bot.message_handler(commands=['start'])
         def do_start(message):
