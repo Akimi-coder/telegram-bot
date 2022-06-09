@@ -15,6 +15,11 @@ from telebot import types
 
 @admin.action(description='Confirmed')
 def confirmed_request(modeladmin, request, queryset):
+    bot = telebot.TeleBot(settings.TOKEN)
+    for obj in queryset:
+        bot.send_message(chat_id=obj.profile.external_id,
+                         text=f"Your request is confirmed")
+    queryset.delete()
     queryset.update(status="done")
 
 
@@ -31,6 +36,11 @@ def requisites(modeladmin, request, queryset):
 
 @admin.action(description='Reject')
 def reject_request(modeladmin, request, queryset):
+    bot = telebot.TeleBot(settings.TOKEN)
+    for obj in queryset:
+        bot.send_message(chat_id=obj.profile.external_id,
+                         text=f"Your request is reject")
+    queryset.delete()
     queryset.update(status="reject")
 
 
