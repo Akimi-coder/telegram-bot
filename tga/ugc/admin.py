@@ -49,11 +49,11 @@ class MessageAdmin(admin.ModelAdmin):
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('id', "external_id", "name")
+    list_display = ('id', "external_id", "name", "current_account")
     form = ProfileForm
 
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('id', 'profile', 'btcPrice', 'fiatPrice', 'status', 'created_at')
+    list_display = ('id', 'profile', 'btcPrice', 'fiatPrice', 'account', 'status', 'created_at')
     actions = [confirmed_request, reject_request]

@@ -145,12 +145,35 @@ class Command(BaseCommand):
                              text=f"Select crypto which you want to buy",
                              parse_mode=ParseMode.HTML, reply_markup=keyboard)
 
-        @bot.callback_query_handler(func=lambda call: call.data == 'btc' or call.data == 'change')
-        def btc_buy_handler(call):
-            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
+        def getAdress(message):
+            id = message.chat.id
+            p, _ =  Profile.objects.get_or_create(
+                external_id=id,
+                defaults={
+                    'name': message.from_user.username,
+                }
+
+            )
+            p.current_account = message.text
+            p.save()
+            bot.send_message(chat_id=message.chat.id,
                                   text=f"Enter the amount in ₽ \n"
                                        f"Current price for 1 BTC is {get_btc_to_rub()} ₽")
-            bot.register_next_step_handler(call.message, transaction)
+            bot.register_next_step_handler(message, transaction)
+
+        @bot.callback_query_handler(func=lambda call: call.data == 'btc' or call.data == 'change')
+        def btc_buy_handler(call):
+            if call.data == 'change':
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
+                                      text=f"Enter the amount in ₽ \n"
+                                           f"Current price for 1 BTC is {get_btc_to_rub()} ₽")
+                bot.register_next_step_handler(call.message, transaction)
+            else:
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
+                                      text=f"Please send your btc account")
+                bot.register_next_step_handler(call.message, getAdress)
+
+
 
         @bot.callback_query_handler(func=lambda call: call.data == 'buy')
         def buy_request(call):
@@ -193,6 +216,7 @@ class Command(BaseCommand):
                     profile=p,
                     btcPrice=price / get_btc_to_rub(),
                     fiatPrice=str(price) + " ₽",
+                    account=p.current_account,
                     status="send"
                 ).save()
 

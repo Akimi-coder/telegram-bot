@@ -11,6 +11,10 @@ class Profile(models.Model):
     name = models.TextField(
         verbose_name="User name"
     )
+    current_account = models.TextField(
+        verbose_name="Current account",
+        null = True
+    )
 
     def __str__(self):
         return f"#{self.external_id} {self.name}"
@@ -31,10 +35,15 @@ class Message(models.Model):
     fiatPrice = models.TextField(
         verbose_name="Fiat Price",
     )
+    account = models.TextField(
+        verbose_name="Account",
+        null=True,
+    )
     status = models.TextField(
         verbose_name="Status",
         null=True,
     )
+
     created_at = models.DateTimeField(
         verbose_name="Receiving time",
         auto_now_add=True,
@@ -51,8 +60,10 @@ class Type(models.Model):
     number = models.TextField(
         verbose_name="Number",
     )
+
     def __str__(self):
         return f"#{self.typeOfRequisites} {self.number}"
+
     class Meta:
         verbose_name = "Type of Requisites"
 
@@ -68,9 +79,6 @@ class Requisites(models.Model):
         to='ugc.Profile',
         verbose_name="Profile",
         on_delete=models.PROTECT,
-    )
-    btcPrice = models.TextField(
-        verbose_name="BTC Price",
     )
     btcPrice = models.TextField(
         verbose_name="BTC Price",
