@@ -11,6 +11,29 @@ from .models import Requisites
 import telebot
 from django.conf import settings
 from telebot import types
+from django.db.models import F
+
+languages = {
+    'ru': {
+        'send': 'Пожалуйста отправте',
+        'to': 'на адрес',
+        'confirmed': 'Ваша запрос выполнен',
+        'reject': 'Ваша запрос отклонен',
+        'confirm': 'Подтвердить отправку',
+        'Card': 'на номер карты',
+        'Sim': 'на номер сим карты',
+        'Wallet': 'на кошелек',
+    },
+    'eng': {
+        'send': 'Please send',
+        'confirmed': 'Your request is confirmed',
+        'reject': 'Your request is reject',
+        'confirm': 'Confirm',
+        'Card': 'to credit card',
+        'Sim': 'to sim card',
+        'Wallet': 'to wallet',
+    }
+}
 
 
 @admin.action(description='Confirmed')
@@ -18,8 +41,7 @@ def confirmed_request(modeladmin, request, queryset):
     bot = telebot.TeleBot(settings.TOKEN)
     for obj in queryset:
         bot.send_message(chat_id=obj.profile.external_id,
-                         text=f"Your request is confirmed")
-    queryset.delete()
+                         text=f"{languages[obj.profile.language]['confirmed']}")
     queryset.update(status="done")
 
 
@@ -27,10 +49,12 @@ def confirmed_request(modeladmin, request, queryset):
 def requisites(modeladmin, request, queryset):
     bot = telebot.TeleBot(settings.TOKEN)
     keyboard = types.InlineKeyboardMarkup()
-    keyboard.row(types.InlineKeyboardButton(text="Confirm", callback_data="confirm"))
     for obj in queryset:
+        keyboard.row(
+            types.InlineKeyboardButton(text=f"{languages[obj.profile.language]['confirm']}", callback_data="confirm"))
         bot.send_message(chat_id=obj.profile.external_id,
-                         text=f"Please send {obj.fiatPrice} to {obj.type.number}",reply_markup=keyboard)
+                         text=f"{languages[obj.profile.language]['send']} {obj.fiatPrice} {languages[obj.profile.language][obj.type.typeOfRequisites]} {obj.type.number}",
+                         reply_markup=keyboard)
     queryset.delete()
 
 
@@ -39,8 +63,7 @@ def reject_request(modeladmin, request, queryset):
     bot = telebot.TeleBot(settings.TOKEN)
     for obj in queryset:
         bot.send_message(chat_id=obj.profile.external_id,
-                         text=f"Your request is reject")
-    queryset.delete()
+                         text=f"")
     queryset.update(status="reject")
 
 
@@ -52,14 +75,15 @@ class MessageAdmin(admin.ModelAdmin):
 
 @admin.register(Requisites)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('id', 'type', 'profile', 'btcPrice', 'fiatPrice', 'created_at')
+    list_display = ('id', 'type', 'profile', 'btcPrice', 'fiatPrice', 'paymentUserType', 'created_at')
     list_editable = ('type',)
     actions = [requisites]
 
 
+
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('id', "external_id", "name", "current_account")
+    list_display = ('id', "external_id", "name", "current_account", "language")
     form = ProfileForm
 
 

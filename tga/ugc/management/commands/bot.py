@@ -16,7 +16,6 @@ from ugc.models import Requisites
 import requests
 from bs4 import BeautifulSoup
 
-
 flag = 0
 
 
@@ -95,30 +94,84 @@ def get_data(coin1="btc", coin2="usd"):
 
 class Command(BaseCommand):
     help = "Telegram-Bot"
+    languages = {
+        'ru': {
+            'Hi': 'Привет',
+            'Hi Bot': 'Это крипто-обменный бот',
+            'Select crypto': 'Выберите криптовалюту котрую хотите купить',
+            'Wait requisite': 'Пожалуйста подождите администратор даст вам реквизиты для оплаты, отправляйте строго указанную сумму для быстрого обмена',
+            'Enter amount': 'Введите сумму в ₽ на котрую хотите купить \n Текущяя стоимость 1 BTC ',
+            'Wait request': 'Пожалуйста подождите администратор проверит ваш запрос',
+            'Amount': 'Ваша сумма',
+            'in btc': 'в BTC',
+            'price': 'Цена',
+            'help': 'Помощь',
+            'buy crypto': 'Купить',
+            'total bids': '',
+            'total trade': '',
+            'send account': 'Пожалуйста введите адресс своего bitcoin кошелька',
+            'reject': 'отклонен',
+            'done': 'выполнен',
+            'request': 'запрос',
+            'status': 'статус',
+            'processed': 'обрабатывается',
+            'change': 'Изменить',
+            'buy': 'Купить',
+            'butStatus': 'Статус'
+        },
+        'eng': {
+            'Hi': 'Hello',
+            'Hi Bot': 'It is a exchange crypto bot',
+            'Select crypto': 'Select crypto which you want to buy',
+            'Wait requisite': 'Please wait administrator has give you requisites',
+            'Enter amount': 'Enter the amount in ₽ \n Current price for 1 BTC is',
+            'Wait request': 'Please wait administrator has checking your request',
+            'Amount': 'You amount',
+            'in btc': 'in BTC',
+            'price': 'Price',
+            'help': 'Help',
+            'buy crypto': 'Buy crypto',
+            'send account': 'Please send your btc account',
+            'reject': 'reject',
+            'done': 'done',
+            'request': 'request',
+            'status': 'status',
+            'processed': 'processed',
+            'change': 'Change',
+            'buy': 'Buy',
+            'butStatus': 'Status',
+        }
+
+    }
 
     def handle(self, *args, **options):
         bot = telebot.TeleBot(settings.TOKEN)
         self.stdout.write("Bot started")
 
-
-        @bot.message_handler(commands=['start'])
-        def do_start(message):
-            keyboard1 = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
-
-            keyboard1.add(types.KeyboardButton('Price💲'), types.KeyboardButton('Help❓')) \
-                .add(types.KeyboardButton("Total bids"), types.KeyboardButton('Total trade ™'),
-                     types.KeyboardButton("Buy crypto 🔄"))
+        def setLanguage(message):
             id = message.chat.id
-            text = message.text
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
                 defaults={
                     'name': message.from_user.username,
                 }
             )
+            keyboard1 = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
+            keyboard1.add(types.KeyboardButton(f"{self.languages[p.language]['price']}💲"),
+                          types.KeyboardButton(f"{self.languages[p.language]['help']}❓")) \
+                .add(types.KeyboardButton("Total bids"), types.KeyboardButton('Total trade ™'),
+                     types.KeyboardButton(f"{self.languages[p.language]['buy crypto']} 🔄"))
             bot.send_message(message.chat.id,
-                             text=f"Hello <b>{message.from_user.first_name}</b>! It is a exchange crypto bot",
+                             text=f"{self.languages[p.language]['Hi']} <b>{message.from_user.first_name}</b>! {self.languages[p.language]['Hi Bot']}",
                              parse_mode=ParseMode.HTML, reply_markup=keyboard1)
+
+        @bot.message_handler(commands=['start'])
+        def do_start(message):
+            keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
+            keyboard.add(types.KeyboardButton('🇷🇺'), types.KeyboardButton('🇺🇸'))
+            bot.send_message(message.chat.id,
+                             text=f"Please set a language",
+                             parse_mode=ParseMode.HTML, reply_markup=keyboard)
 
         @bot.message_handler(commands=['help'])
         def do_help(message):
@@ -139,15 +192,22 @@ class Command(BaseCommand):
 
         @bot.message_handler(commands=['buy'])
         def exchange(message):
+            id = message.chat.id
+            p, _ = Profile.objects.get_or_create(
+                external_id=id,
+                defaults={
+                    'name': message.from_user.username,
+                }
+            )
             keyboard = types.InlineKeyboardMarkup()
             keyboard.add(types.InlineKeyboardButton(text="BTC", callback_data="btc"))
             bot.send_message(chat_id=message.chat.id,
-                             text=f"Select crypto which you want to buy",
+                             text=f"{self.languages[p.language]['Select crypto']}",
                              parse_mode=ParseMode.HTML, reply_markup=keyboard)
 
         def getAdress(message):
             id = message.chat.id
-            p, _ =  Profile.objects.get_or_create(
+            p, _ = Profile.objects.get_or_create(
                 external_id=id,
                 defaults={
                     'name': message.from_user.username,
@@ -157,30 +217,40 @@ class Command(BaseCommand):
             p.current_account = message.text
             p.save()
             bot.send_message(chat_id=message.chat.id,
-                                  text=f"Enter the amount in ₽ \n"
-                                       f"Current price for 1 BTC is {get_btc_to_rub()} ₽")
+                             text=f"{self.languages[p.language]['Enter amount']} {get_btc_to_rub()} ₽")
             bot.register_next_step_handler(message, transaction)
 
         @bot.callback_query_handler(func=lambda call: call.data == 'btc' or call.data == 'change')
         def btc_buy_handler(call):
+            id = call.message.chat.id
+            p, _ = Profile.objects.get_or_create(
+                external_id=id,
+                defaults={
+                    'name': call.message.from_user.username,
+                }
+            )
             if call.data == 'change':
                 bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
-                                      text=f"Enter the amount in ₽ \n"
-                                           f"Current price for 1 BTC is {get_btc_to_rub()} ₽")
+                                      text=f"{self.languages[p.language]['Enter amount']} {get_btc_to_rub()} ₽")
                 bot.register_next_step_handler(call.message, transaction)
             else:
                 bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
-                                      text=f"Please send your btc account")
+                                      text=f"{self.languages[p.language]['send account']}")
                 bot.register_next_step_handler(call.message, getAdress)
-
-
 
         @bot.callback_query_handler(func=lambda call: call.data == 'buy')
         def buy_request(call):
+            id = call.message.chat.id
+            p, _ = Profile.objects.get_or_create(
+                external_id=id,
+                defaults={
+                    'name': call.message.from_user.username,
+                }
+            )
             res = re.findall(r"([+-]?([0-9]+([.][0-9]*)?|[.][0-9]+))(\s₽)", call.message.text)
             price = float(res[0][0])
             bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
-                                  text=f"Please wait administrator has give you requisites")
+                                  text=f"{self.languages[p.language]['Wait requisite']}")
             id = call.message.chat.id
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
@@ -190,6 +260,7 @@ class Command(BaseCommand):
             )
             Requisites(
                 profile=p,
+                paymentUserType="Card",
                 btcPrice=price / get_btc_to_rub(),
                 fiatPrice=str(price) + " ₽",
             ).save()
@@ -200,24 +271,24 @@ class Command(BaseCommand):
             print(res[0][0])
             price = float(res[0][0])
             keyboard = types.InlineKeyboardMarkup()
-            keyboard.row(types.InlineKeyboardButton(text="Status", callback_data="status"))
+            id = call.message.chat.id
+            p, _ = Profile.objects.get_or_create(
+                external_id=id,
+                defaults={
+                    'name': call.message.from_user.username,
+                }
+            )
+            keyboard.row(types.InlineKeyboardButton(text=f"{self.languages[p.language]['butStatus']}", callback_data="status"))
             if call.data == "confirm":
                 bot.send_message(chat_id=call.message.chat.id,
-                                 text="Please wait administrator has checking your request",
+                                 text=f"{self.languages[p.language]['Wait request']}",
                                  parse_mode=ParseMode.HTML, reply_markup=keyboard)
-                id = call.message.chat.id
-                p, _ = Profile.objects.get_or_create(
-                    external_id=id,
-                    defaults={
-                        'name': call.message.from_user.username,
-                    }
-                )
                 Message(
                     profile=p,
                     btcPrice=price / get_btc_to_rub(),
                     fiatPrice=str(price) + " ₽",
                     account=p.current_account,
-                    status="send"
+                    status="processed"
                 ).save()
 
         @bot.callback_query_handler(func=lambda call: call.data == "status")
@@ -235,7 +306,7 @@ class Command(BaseCommand):
                     profile=p,
                 )
                 bot.send_message(chat_id=call.message.chat.id,
-                                 text=f"Status: {message.status}",
+                                 text=f"{self.languages[p.language]['butStatus']}: {self.languages[p.language][message.status]}",
                                  parse_mode=ParseMode.HTML)
 
             except Message.MultipleObjectsReturned:
@@ -244,22 +315,36 @@ class Command(BaseCommand):
                 )
                 str = ""
                 for i in range(len(message)):
-                    str += f"{i + 1} request status: {message[i].status}\n"
+                    str += f"{i + 1} {self.languages[p.language]['request']} {self.languages[p.language]['status']}: {self.languages[p.language][message[i].status]}\n"
                 bot.send_message(chat_id=call.message.chat.id,
                                  text=f"{str}",
                                  parse_mode=ParseMode.HTML)
 
         def transaction(message):
+            id = message.chat.id
+            p, _ = Profile.objects.get_or_create(
+                external_id=id,
+                defaults={
+                    'name': message.from_user.username,
+                }
+            )
             keyboard = types.InlineKeyboardMarkup()
-            keyboard.row(types.InlineKeyboardButton(text="Change", callback_data="change"),
-                         types.InlineKeyboardButton(text="Buy", callback_data="buy"))
+            keyboard.row(types.InlineKeyboardButton(text=f"{self.languages[p.language]['change']}", callback_data="change"),
+                         types.InlineKeyboardButton(text=f"{self.languages[p.language]['buy']}", callback_data="buy"))
             price = float(message.text)
             bot.send_message(chat_id=message.chat.id,
-                             text=f"You amount {message.text} ₽  in BTC: {float(message.text) / get_btc_to_rub()}",
+                             text=f"{self.languages[p.language]['Amount']} {message.text} ₽  {self.languages[p.language]['in btc']}: {float(message.text) / get_btc_to_rub()}",
                              parse_mode=ParseMode.HTML, reply_markup=keyboard)
 
         @bot.message_handler(content_types=['text'])
         def do_button(message):
+            id = message.chat.id
+            p, _ = Profile.objects.get_or_create(
+                external_id=id,
+                defaults={
+                    'name': message.from_user.username,
+                }
+            )
             if message.text == "Help❓":
                 bot.send_message(message.chat.id,
                                  text=f"List of all commands:\n/price\n/total_bids_amount\n/total_trade_ask_and_bid")
@@ -269,7 +354,15 @@ class Command(BaseCommand):
                 bot.send_message(message.chat.id, text=get_depth())
             if message.text == "Total trade ™":
                 bot.send_message(message.chat.id, text=get_trades())
-            if message.text == "Buy crypto 🔄":
+            if message.text == "🇷🇺":
+                p.language = "ru"
+                p.save()
+                setLanguage(message)
+            if message.text == "🇺🇸":
+                p.language = "eng"
+                p.save()
+                setLanguage(message)
+            if message.text == f"{self.languages[p.language]['buy crypto']} 🔄":
                 exchange(message)
 
         bot.infinity_polling()
