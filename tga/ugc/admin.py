@@ -17,11 +17,11 @@ languages = {
     'ru': {
         'send': 'Пожалуйста отправте',
         'to': 'на адрес',
-        'confirmed': 'Ваша запрос выполнен',
-        'reject': 'Ваша запрос отклонен',
+        'confirmed': 'Ваш запрос выполнен',
+        'reject': 'Ваш запрос отклонен',
         'confirm': 'Подтвердить отправку',
-        'Card': 'на номер карты',
-        'Sim': 'на номер сим карты',
+        'Credit card': 'на номер карты',
+        'Sim card': 'на номер сим карты',
         'Wallet': 'на кошелек',
     },
     'eng': {
@@ -29,8 +29,8 @@ languages = {
         'confirmed': 'Your request is confirmed',
         'reject': 'Your request is reject',
         'confirm': 'Confirm',
-        'Card': 'to credit card',
-        'Sim': 'to sim card',
+        'Credit card': 'to credit card',
+        'Sim card': 'to sim card',
         'Wallet': 'to wallet',
     }
 }
@@ -75,7 +75,7 @@ class MessageAdmin(admin.ModelAdmin):
 
 @admin.register(Requisites)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('id', 'type', 'profile', 'btcPrice', 'fiatPrice', 'paymentUserType', 'created_at')
+    list_display = ('id', 'paymentUserType', 'profile', 'btcPrice', 'fiatPrice', 'type', 'created_at')
     list_editable = ('type',)
     actions = [requisites]
 
@@ -83,7 +83,7 @@ class MessageAdmin(admin.ModelAdmin):
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('id', "external_id", "name", "current_account", "language")
+    list_display = ('id', "external_id", "name", "current_account", "language","payment_type")
     form = ProfileForm
 
 

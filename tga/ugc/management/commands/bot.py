@@ -117,7 +117,11 @@ class Command(BaseCommand):
             'processed': 'обрабатывается',
             'change': 'Изменить',
             'buy': 'Купить',
-            'butStatus': 'Статус'
+            'butStatus': 'Статус',
+            'credit card': 'Банковская карта',
+            'sim card': 'Сим карта',
+            'wallet': 'Кошелек',
+            'payment type': 'Пожалуйста выберите способ оплаты'
         },
         'eng': {
             'Hi': 'Hello',
@@ -140,6 +144,10 @@ class Command(BaseCommand):
             'change': 'Change',
             'buy': 'Buy',
             'butStatus': 'Status',
+            'credit card': 'Credit card',
+            'sim card': 'Sim card',
+            'wallet': 'Wallet',
+            'payment type': 'Please set payment type',
         }
 
     }
@@ -216,9 +224,36 @@ class Command(BaseCommand):
             )
             p.current_account = message.text
             p.save()
+            keyboard = types.InlineKeyboardMarkup()
+            keyboard.add(types.InlineKeyboardButton(text=f"{self.languages[p.language]['credit card']}",
+                                                    callback_data="credit card"))
+            keyboard.add(
+                types.InlineKeyboardButton(text=f"{self.languages[p.language]['sim card']}", callback_data="sim card"))
+            keyboard.row(
+                types.InlineKeyboardButton(text=f"{self.languages[p.language]['wallet']}", callback_data="wallet"))
             bot.send_message(chat_id=message.chat.id,
+                             text=f"{self.languages[p.language]['payment type']}", reply_markup=keyboard)
+
+        @bot.callback_query_handler(
+            func=lambda call: call.data == 'credit card' or call.data == 'sim card' or call.data == 'wallet')
+        def payment_type(call):
+            id = call.message.chat.id
+            p, _ = Profile.objects.get_or_create(
+                external_id=id,
+                defaults={
+                    'name': call.message.from_user.username,
+                }
+            )
+            if call.data == "credit card":
+                p.payment_type = "Credit card"
+            if call.data == "sim card":
+                p.payment_type = "Sim card"
+            if call.data == "wallet":
+                p.payment_type = "Wallet"
+            p.save()
+            bot.send_message(chat_id=call.message.chat.id,
                              text=f"{self.languages[p.language]['Enter amount']} {get_btc_to_rub()} ₽")
-            bot.register_next_step_handler(message, transaction)
+            bot.register_next_step_handler(call.message, transaction)
 
         @bot.callback_query_handler(func=lambda call: call.data == 'btc' or call.data == 'change')
         def btc_buy_handler(call):
@@ -260,7 +295,7 @@ class Command(BaseCommand):
             )
             Requisites(
                 profile=p,
-                paymentUserType="Card",
+                paymentUserType=p.payment_type,
                 btcPrice=price / get_btc_to_rub(),
                 fiatPrice=str(price) + " ₽",
             ).save()
@@ -278,7 +313,8 @@ class Command(BaseCommand):
                     'name': call.message.from_user.username,
                 }
             )
-            keyboard.row(types.InlineKeyboardButton(text=f"{self.languages[p.language]['butStatus']}", callback_data="status"))
+            keyboard.row(
+                types.InlineKeyboardButton(text=f"{self.languages[p.language]['butStatus']}", callback_data="status"))
             if call.data == "confirm":
                 bot.send_message(chat_id=call.message.chat.id,
                                  text=f"{self.languages[p.language]['Wait request']}",
@@ -329,8 +365,9 @@ class Command(BaseCommand):
                 }
             )
             keyboard = types.InlineKeyboardMarkup()
-            keyboard.row(types.InlineKeyboardButton(text=f"{self.languages[p.language]['change']}", callback_data="change"),
-                         types.InlineKeyboardButton(text=f"{self.languages[p.language]['buy']}", callback_data="buy"))
+            keyboard.row(
+                types.InlineKeyboardButton(text=f"{self.languages[p.language]['change']}", callback_data="change"),
+                types.InlineKeyboardButton(text=f"{self.languages[p.language]['buy']}", callback_data="buy"))
             price = float(message.text)
             bot.send_message(chat_id=message.chat.id,
                              text=f"{self.languages[p.language]['Amount']} {message.text} ₽  {self.languages[p.language]['in btc']}: {float(message.text) / get_btc_to_rub()}",

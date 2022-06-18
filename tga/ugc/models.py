@@ -15,7 +15,14 @@ class Profile(models.Model):
         verbose_name="Current account",
         null = True
     )
-
+    language = models.TextField(
+        verbose_name="language",
+        null=True
+    )
+    payment_type = models.TextField(
+        verbose_name="Payment type",
+        null=True,
+    )
     def __str__(self):
         return f"#{self.external_id} {self.name}"
 
@@ -79,6 +86,10 @@ class Requisites(models.Model):
         to='ugc.Profile',
         verbose_name="Profile",
         on_delete=models.PROTECT,
+    )
+    paymentUserType = models.TextField(
+        verbose_name="User Payment Type",
+        null=True,
     )
     btcPrice = models.TextField(
         verbose_name="BTC Price",
