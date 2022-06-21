@@ -50,10 +50,14 @@ def requisites(modeladmin, request, queryset):
     bot = telebot.TeleBot(settings.TOKEN)
     keyboard = types.InlineKeyboardMarkup()
     for obj in queryset:
+
+        sum = float(obj.fiatPrice[0:obj.fiatPrice.find('₽')])
+        percent = sum * (float(obj.type.percent) / 100)
+
         keyboard.row(
             types.InlineKeyboardButton(text=f"{languages[obj.profile.language]['confirm']}", callback_data="confirm"))
         bot.send_message(chat_id=obj.profile.external_id,
-                         text=f"{languages[obj.profile.language]['send']} {obj.fiatPrice} {languages[obj.profile.language][obj.type.typeOfRequisites]} {obj.type.number}",
+                         text=f"{languages[obj.profile.language]['send']} {sum + percent} ₽ {languages[obj.profile.language][obj.type.typeOfRequisites]} {obj.type.number}",
                          reply_markup=keyboard)
     queryset.delete()
 
@@ -69,7 +73,7 @@ def reject_request(modeladmin, request, queryset):
 
 @admin.register(Type)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('id', 'typeOfRequisites', 'number')
+    list_display = ('id', 'typeOfRequisites', 'number', 'percent')
     form = TypeForm
 
 
@@ -80,10 +84,9 @@ class MessageAdmin(admin.ModelAdmin):
     actions = [requisites]
 
 
-
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('id', "external_id", "name", "current_account", "language","payment_type")
+    list_display = ('id', "external_id", "name", "current_account", "language", "payment_type")
     form = ProfileForm
 
 

@@ -67,6 +67,10 @@ class Type(models.Model):
     number = models.TextField(
         verbose_name="Number",
     )
+    percent = models.TextField(
+        verbose_name="Percent",
+        null=True,
+    )
 
     def __str__(self):
         return f"#{self.typeOfRequisites} {self.number}"

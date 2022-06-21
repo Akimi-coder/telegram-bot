@@ -21,8 +21,10 @@ class TypeForm(forms.ModelForm):
         fields = (
             'typeOfRequisites',
             'number',
+            'percent',
         )
         widgets = {
             'typeOfRequisites': forms.TextInput,
             'number': forms.TextInput,
+            'percent': forms.TextInput,
         }
