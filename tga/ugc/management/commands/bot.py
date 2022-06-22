@@ -382,14 +382,14 @@ class Command(BaseCommand):
                     'name': message.from_user.username,
                 }
             )
-            if message.text == "Help❓":
+            if message.text == f"{self.languages[p.language]['help']}❓":
                 bot.send_message(message.chat.id,
                                  text=f"List of all commands:\n/price\n/total_bids_amount\n/total_trade_ask_and_bid")
-            if message.text == "Price💲":
+            if message.text == f"{self.languages[p.language]['price']}💲":
                 bot.send_message(message.chat.id, text=f"{get_btc_to_rub()} ₽")
-            if message.text == "Total bids":
+            if message.text == "Total bids" and message.text == "":
                 bot.send_message(message.chat.id, text=get_depth())
-            if message.text == "Total trade ™":
+            if message.text == "Total trade ™" and message.text == "":
                 bot.send_message(message.chat.id, text=get_trades())
             if message.text == "🇷🇺":
                 p.language = "ru"
