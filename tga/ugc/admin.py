@@ -3,9 +3,11 @@ from django.contrib import admin
 # Register your models here.
 
 from .forms import ProfileForm
-from .forms import TypeForm
+from .forms import TypeFrom
+from .forms import TypeOfRequisitesForm
 from .models import Profile
 from .models import Message
+from .models import TypeOfRequisites
 from .models import Type
 from .models import Requisites
 import telebot
@@ -50,7 +52,6 @@ def requisites(modeladmin, request, queryset):
     bot = telebot.TeleBot(settings.TOKEN)
     keyboard = types.InlineKeyboardMarkup()
     for obj in queryset:
-
         sum = float(obj.fiatPrice[0:obj.fiatPrice.find('₽')])
         percent = sum * (float(obj.type.percent) / 100)
 
@@ -71,10 +72,17 @@ def reject_request(modeladmin, request, queryset):
     queryset.update(status="reject")
 
 
+@admin.register(TypeOfRequisites)
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ('typeOfRequisites','active')
+    list_editable = ('active',)
+    form = TypeOfRequisitesForm
+
+
 @admin.register(Type)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('id', 'typeOfRequisites', 'number', 'percent')
-    form = TypeForm
+    list_display = ('id', 'type', 'number', 'percent')
+    form = TypeFrom
 
 
 @admin.register(Requisites)
@@ -86,7 +94,7 @@ class MessageAdmin(admin.ModelAdmin):
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('id', "external_id", "name", "current_account", "language", "payment_type")
+    list_display = ('id', "external_id", "current_account", "language", "payment_type")
     form = ProfileForm
 
 

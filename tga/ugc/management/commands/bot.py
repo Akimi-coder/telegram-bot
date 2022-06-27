@@ -13,6 +13,7 @@ import requests
 from ugc.models import Profile
 from ugc.models import Message
 from ugc.models import Requisites
+from ugc.models import TypeOfRequisites
 import requests
 from bs4 import BeautifulSoup
 
@@ -225,12 +226,10 @@ class Command(BaseCommand):
             p.current_account = message.text
             p.save()
             keyboard = types.InlineKeyboardMarkup()
-            keyboard.add(types.InlineKeyboardButton(text=f"{self.languages[p.language]['credit card']}",
-                                                    callback_data="credit card"))
-            keyboard.add(
-                types.InlineKeyboardButton(text=f"{self.languages[p.language]['sim card']}", callback_data="sim card"))
-            keyboard.row(
-                types.InlineKeyboardButton(text=f"{self.languages[p.language]['wallet']}", callback_data="wallet"))
+            for i in TypeOfRequisites.objects.all():
+                if i.active == "On":
+                    keyboard.add(types.InlineKeyboardButton(text=f"{self.languages[p.language][i.typeOfRequisites]}",
+                                                            callback_data=i.typeOfRequisites))
             bot.send_message(chat_id=message.chat.id,
                              text=f"{self.languages[p.language]['payment type']}", reply_markup=keyboard)
 
@@ -382,6 +381,13 @@ class Command(BaseCommand):
                     'name': message.from_user.username,
                 }
             )
+            if message.text == "🇷🇺":
+                p.language = "ru"
+                p.save()
+                setLanguage(message)
+            if message.text == "🇺🇸":
+                p.language = "eng"
+                p.save()
             if message.text == f"{self.languages[p.language]['help']}❓":
                 bot.send_message(message.chat.id,
                                  text=f"List of all commands:\n/price\n/total_bids_amount\n/total_trade_ask_and_bid")
@@ -391,13 +397,6 @@ class Command(BaseCommand):
                 bot.send_message(message.chat.id, text=get_depth())
             if message.text == "Total trade ™" and message.text == "":
                 bot.send_message(message.chat.id, text=get_trades())
-            if message.text == "🇷🇺":
-                p.language = "ru"
-                p.save()
-                setLanguage(message)
-            if message.text == "🇺🇸":
-                p.language = "eng"
-                p.save()
                 setLanguage(message)
             if message.text == f"{self.languages[p.language]['buy crypto']} 🔄":
                 exchange(message)

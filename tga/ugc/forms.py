@@ -1,6 +1,7 @@
 from django import forms
 from .models import Profile
 from .models import Type
+from .models import TypeOfRequisites
 
 
 class ProfileForm(forms.ModelForm):
@@ -8,23 +9,30 @@ class ProfileForm(forms.ModelForm):
         model = Profile
         fields = (
             'external_id',
-            'name',
         )
-        widgets = {
-            'name': forms.TextInput,
-        }
 
 
-class TypeForm(forms.ModelForm):
+class TypeFrom(forms.ModelForm):
     class Meta:
         model = Type
         fields = (
-            'typeOfRequisites',
+            'type',
             'number',
             'percent',
         )
         widgets = {
-            'typeOfRequisites': forms.TextInput,
             'number': forms.TextInput,
             'percent': forms.TextInput,
+        }
+
+
+class TypeOfRequisitesForm(forms.ModelForm):
+    class Meta:
+        model = TypeOfRequisites
+        fields = (
+            'typeOfRequisites',
+            'active'
+        )
+        widgets = {
+            'typeOfRequisites': forms.TextInput,
         }

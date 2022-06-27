@@ -8,12 +8,9 @@ class Profile(models.Model):
         verbose_name="User ID",
         unique=True,
     )
-    name = models.TextField(
-        verbose_name="User name"
-    )
     current_account = models.TextField(
         verbose_name="Current account",
-        null = True
+        null=True
     )
     language = models.TextField(
         verbose_name="language",
@@ -23,8 +20,9 @@ class Profile(models.Model):
         verbose_name="Payment type",
         null=True,
     )
+
     def __str__(self):
-        return f"#{self.external_id} {self.name}"
+        return f"#{self.external_id}"
 
     class Meta:
         verbose_name = "Profile"
@@ -60,9 +58,37 @@ class Message(models.Model):
         verbose_name = "Message"
 
 
-class Type(models.Model):
+class TypeOfRequisites(models.Model):
+    CHOICES = (
+        ('On', 'On'),
+        ('Off', 'Off'),
+    )
     typeOfRequisites = models.TextField(
         verbose_name="Requisites Type",
+        null=True,
+        unique=True,
+    )
+    active = models.CharField(
+        max_length=3,
+        verbose_name="Requisites Type",
+        null=True,
+        choices=CHOICES,
+
+    )
+
+    def __str__(self):
+        return f"#{self.typeOfRequisites}"
+
+    class Meta:
+        verbose_name = "Type of Requisites"
+
+
+class Type(models.Model):
+    type = models.ForeignKey(
+        to='ugc.TypeOfRequisites',
+        verbose_name="Requisites Type",
+        on_delete=models.PROTECT,
+        null=True,
     )
     number = models.TextField(
         verbose_name="Number",
@@ -73,10 +99,10 @@ class Type(models.Model):
     )
 
     def __str__(self):
-        return f"#{self.typeOfRequisites} {self.number}"
+        return f"#{self.type.typeOfRequisites} {self.number}"
 
     class Meta:
-        verbose_name = "Type of Requisites"
+        verbose_name = "Requisites data"
 
 
 class Requisites(models.Model):
