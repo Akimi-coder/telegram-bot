@@ -161,9 +161,6 @@ class Command(BaseCommand):
             id = message.chat.id
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
-                defaults={
-                    'name': message.from_user.username,
-                }
             )
             keyboard1 = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
             keyboard1.add(types.KeyboardButton(f"{self.languages[p.language]['price']}💲"),
@@ -204,9 +201,6 @@ class Command(BaseCommand):
             id = message.chat.id
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
-                defaults={
-                    'name': message.from_user.username,
-                }
             )
             keyboard = types.InlineKeyboardMarkup()
             keyboard.add(types.InlineKeyboardButton(text="BTC", callback_data="btc"))
@@ -218,10 +212,6 @@ class Command(BaseCommand):
             id = message.chat.id
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
-                defaults={
-                    'name': message.from_user.username,
-                }
-
             )
             p.current_account = message.text
             p.save()
@@ -239,9 +229,6 @@ class Command(BaseCommand):
             id = call.message.chat.id
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
-                defaults={
-                    'name': call.message.from_user.username,
-                }
             )
             if call.data == "credit card":
                 p.payment_type = "Credit card"
@@ -259,9 +246,6 @@ class Command(BaseCommand):
             id = call.message.chat.id
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
-                defaults={
-                    'name': call.message.from_user.username,
-                }
             )
             if call.data == 'change':
                 bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
@@ -277,9 +261,6 @@ class Command(BaseCommand):
             id = call.message.chat.id
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
-                defaults={
-                    'name': call.message.from_user.username,
-                }
             )
             res = re.findall(r"([+-]?([0-9]+([.][0-9]*)?|[.][0-9]+))(\s₽)", call.message.text)
             price = float(res[0][0])
@@ -288,9 +269,6 @@ class Command(BaseCommand):
             id = call.message.chat.id
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
-                defaults={
-                    'name': call.message.from_user.username,
-                }
             )
             Requisites(
                 profile=p,
@@ -308,9 +286,6 @@ class Command(BaseCommand):
             id = call.message.chat.id
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
-                defaults={
-                    'name': call.message.from_user.username,
-                }
             )
             keyboard.row(
                 types.InlineKeyboardButton(text=f"{self.languages[p.language]['butStatus']}", callback_data="status"))
@@ -331,9 +306,6 @@ class Command(BaseCommand):
             id = call.message.chat.id
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
-                defaults={
-                    'name': call.message.from_user.username,
-                }
             )
 
             try:
@@ -359,9 +331,6 @@ class Command(BaseCommand):
             id = message.chat.id
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
-                defaults={
-                    'name': message.from_user.username,
-                }
             )
             keyboard = types.InlineKeyboardMarkup()
             keyboard.row(
@@ -377,9 +346,6 @@ class Command(BaseCommand):
             id = message.chat.id
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
-                defaults={
-                    'name': message.from_user.username,
-                }
             )
             if message.text == "🇷🇺":
                 p.language = "ru"

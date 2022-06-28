@@ -22,18 +22,18 @@ languages = {
         'confirmed': 'Ваш запрос выполнен',
         'reject': 'Ваш запрос отклонен',
         'confirm': 'Подтвердить отправку',
-        'Credit card': 'на номер карты',
-        'Sim card': 'на номер сим карты',
-        'Wallet': 'на кошелек',
+        'credit card': 'на номер карты',
+        'sim card': 'на номер сим карты',
+        'wallet': 'на кошелек',
     },
     'eng': {
         'send': 'Please send',
         'confirmed': 'Your request is confirmed',
         'reject': 'Your request is reject',
         'confirm': 'Confirm',
-        'Credit card': 'to credit card',
-        'Sim card': 'to sim card',
-        'Wallet': 'to wallet',
+        'credit card': 'to credit card',
+        'sim card': 'to sim card',
+        'wallet': 'to wallet',
     }
 }
 
@@ -58,7 +58,7 @@ def requisites(modeladmin, request, queryset):
         keyboard.row(
             types.InlineKeyboardButton(text=f"{languages[obj.profile.language]['confirm']}", callback_data="confirm"))
         bot.send_message(chat_id=obj.profile.external_id,
-                         text=f"{languages[obj.profile.language]['send']} {sum + percent} ₽ {languages[obj.profile.language][obj.type.typeOfRequisites]} {obj.type.number}",
+                         text=f"{languages[obj.profile.language]['send']} {sum + percent} ₽ {languages[obj.profile.language][obj.type.type.typeOfRequisites]} {obj.type.number}",
                          reply_markup=keyboard)
     queryset.delete()
 
@@ -68,7 +68,7 @@ def reject_request(modeladmin, request, queryset):
     bot = telebot.TeleBot(settings.TOKEN)
     for obj in queryset:
         bot.send_message(chat_id=obj.profile.external_id,
-                         text=f"")
+                         text=f"{languages[obj.profile.language]['reject']}")
     queryset.update(status="reject")
 
 
