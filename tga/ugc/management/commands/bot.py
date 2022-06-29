@@ -101,7 +101,7 @@ class Command(BaseCommand):
             'Hi Bot': 'Это крипто-обменный бот',
             'Select crypto': 'Выберите криптовалюту котрую хотите купить',
             'Wait requisite': 'Пожалуйста подождите администратор даст вам реквизиты для оплаты, отправляйте строго указанную сумму для быстрого обмена',
-            'Enter amount': 'Введите сумму в ₽ на котрую хотите купить \n Текущяя стоимость 1 BTC ',
+            'Enter amount': 'Введите сумму в ₽ на котрую хотите купить \nТекущяя стоимость 1 BTC ',
             'Wait request': 'Пожалуйста подождите администратор проверит ваш запрос',
             'Amount': 'Ваша сумма',
             'in btc': 'в BTC',
@@ -293,13 +293,14 @@ class Command(BaseCommand):
                 bot.send_message(chat_id=call.message.chat.id,
                                  text=f"{self.languages[p.language]['Wait request']}",
                                  parse_mode=ParseMode.HTML, reply_markup=keyboard)
-                Message(
-                    profile=p,
-                    btcPrice=price / get_btc_to_rub(),
-                    fiatPrice=str(price) + " ₽",
-                    account=p.current_account,
-                    status="processed"
-                ).save()
+                m, _ = Message.objects.get_or_create(
+                    message_id=call.message.message_id,
+                )
+                m.profile = p
+                m.fiatPrice = str(price) + " ₽"
+                m.account = p.current_account
+                m.status = "processed"
+                m.save()
 
         @bot.callback_query_handler(func=lambda call: call.data == "status")
         def confirm(call):

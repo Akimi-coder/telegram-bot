@@ -29,16 +29,24 @@ class Profile(models.Model):
 
 
 class Message(models.Model):
+    message_id = models.PositiveIntegerField(
+        verbose_name="Message ID",
+        unique=True,
+        null=True,
+    )
     profile = models.ForeignKey(
         to='ugc.Profile',
         verbose_name="Profile",
         on_delete=models.PROTECT,
+        null=True,
     )
     btcPrice = models.TextField(
         verbose_name="BTC Price",
+        null=True,
     )
     fiatPrice = models.TextField(
         verbose_name="Fiat Price",
+        null=True,
     )
     account = models.TextField(
         verbose_name="Account",
@@ -96,6 +104,7 @@ class Type(models.Model):
     percent = models.TextField(
         verbose_name="Percent",
         null=True,
+        editable=True,
     )
 
     def __str__(self):

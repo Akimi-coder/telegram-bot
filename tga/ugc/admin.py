@@ -1,7 +1,8 @@
 from django.contrib import admin
 
 # Register your models here.
-
+from django.forms import TextInput, Textarea
+from django.db import models
 from .forms import ProfileForm
 from .forms import TypeFrom
 from .forms import TypeOfRequisitesForm
@@ -14,6 +15,17 @@ import telebot
 from django.conf import settings
 from telebot import types
 from django.db.models import F
+import requests
+from bs4 import BeautifulSoup
+
+
+
+def get_btc_to_rub(coin1="BTC", coin2="RUB"):
+    r = requests.get(f"https://freecurrencyrates.com/en/convert-{coin1}-{coin2}")
+    soup = BeautifulSoup(r.content, "html.parser")
+    res = soup.find(id="value_to")
+    return float(res['value'])
+
 
 languages = {
     'ru': {
@@ -57,9 +69,14 @@ def requisites(modeladmin, request, queryset):
 
         keyboard.row(
             types.InlineKeyboardButton(text=f"{languages[obj.profile.language]['confirm']}", callback_data="confirm"))
-        bot.send_message(chat_id=obj.profile.external_id,
-                         text=f"{languages[obj.profile.language]['send']} {sum + percent} ₽ {languages[obj.profile.language][obj.type.type.typeOfRequisites]} {obj.type.number}",
-                         reply_markup=keyboard)
+        mes = bot.send_message(chat_id=obj.profile.external_id,
+                               text=f"{languages[obj.profile.language]['send']} {sum + percent} ₽ {languages[obj.profile.language][obj.type.type.typeOfRequisites]} {obj.type.number}",
+                               reply_markup=keyboard)
+        print(mes)
+        Message(
+            message_id=mes.message_id,
+            btcPrice=sum/get_btc_to_rub(),
+        ).save()
     queryset.delete()
 
 
@@ -74,7 +91,7 @@ def reject_request(modeladmin, request, queryset):
 
 @admin.register(TypeOfRequisites)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('typeOfRequisites','active')
+    list_display = ('typeOfRequisites', 'active')
     list_editable = ('active',)
     form = TypeOfRequisitesForm
 
@@ -83,12 +100,17 @@ class MessageAdmin(admin.ModelAdmin):
 class MessageAdmin(admin.ModelAdmin):
     list_display = ('id', 'type', 'number', 'percent')
     form = TypeFrom
+    formfield_overrides = {
+        models.TextField: {'widget': Textarea(attrs={'rows': 0, 'cols': 1})},
+    }
+    list_editable = ('percent',)
 
 
 @admin.register(Requisites)
 class MessageAdmin(admin.ModelAdmin):
     list_display = ('id', 'paymentUserType', 'profile', 'btcPrice', 'fiatPrice', 'type', 'created_at')
     list_editable = ('type',)
+
     actions = [requisites]
 
 
@@ -100,5 +122,5 @@ class ProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('id', 'profile', 'btcPrice', 'fiatPrice', 'account', 'status', 'created_at')
+    list_display = ('id', 'message_id', 'profile', 'btcPrice', 'fiatPrice', 'account', 'status', 'created_at')
     actions = [confirmed_request, reject_request]
