@@ -383,6 +383,10 @@ class Command(BaseCommand):
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
             )
+            t = TypeOfRequisites.objects.get(
+                typeOfRequisites=p.payment_type,
+            )
+            price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
             if message.text == "🇷🇺":
                 p.language = "ru"
                 p.payment_type = "credit card"
@@ -397,7 +401,7 @@ class Command(BaseCommand):
                 bot.send_message(message.chat.id,
                                  text=f"Если возникли вопросы обращайтесь к @suppbitpay")
             if message.text == f"{self.languages[p.language]['price']}💲":
-                bot.send_message(message.chat.id, text=f"{get_btc_to_rub()} ₽")
+                bot.send_message(message.chat.id, text=f"{price} ₽")
             if message.text == f"{self.languages[p.language]['buy crypto']} 🔄":
                 exchange(message)
 
