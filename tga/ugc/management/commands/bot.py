@@ -16,7 +16,7 @@ from ugc.models import Requisites
 from ugc.models import TypeOfRequisites
 from ugc.models import Type
 from ugc.models import Admin
-
+import csv
 import requests
 from bs4 import BeautifulSoup
 
@@ -284,12 +284,18 @@ class Command(BaseCommand):
             t = TypeOfRequisites.objects.get(
                 typeOfRequisites=p.payment_type,
             )
+
+            file = open("logs.txt", "a")
+            file.write(f"id: {id}  сума обміну: {str(price)}₽ BTC: {get_btc_to_rub()} BTC разом з %: {(get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100)))} реквізити: {p.payment_type} дата: {datetime.now()}\n")
+            file.close()
+
             Requisites(
                 profile=p,
                 paymentUserType=p.payment_type,
                 btcPrice=price / (get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))),
                 fiatPrice=str(price) + " ₽",
             ).save()
+
             for i in Admin.objects.all():
                 bot.send_message(chat_id=i.external_id,
                                  text=f"New request",
@@ -355,10 +361,20 @@ class Command(BaseCommand):
             keyboard.row(
                 types.InlineKeyboardButton(text=f"{self.languages[p.language]['change']}", callback_data="change"),
                 types.InlineKeyboardButton(text=f"{self.languages[p.language]['buy']}", callback_data="buy"))
-            price = float(message.text)
-            bot.send_message(chat_id=message.chat.id,
-                             text=f"{self.languages[p.language]['Amount']} {message.text} ₽  {self.languages[p.language]['in btc']}: {float(message.text) / get_btc_to_rub()}",
+            t = TypeOfRequisites.objects.get(
+                typeOfRequisites=p.payment_type,
+            )
+            price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
+            try:
+                bot.send_message(chat_id=message.chat.id,
+                             text=f"{self.languages[p.language]['Amount']} {message.text} ₽  {self.languages[p.language]['in btc']}: {float(message.text) / price}",
                              parse_mode=ParseMode.HTML, reply_markup=keyboard)
+            except:
+                bot.send_message(chat_id=message.chat.id,
+                                      text="Пожалуйста введите число")
+                bot.send_message(chat_id=message.chat.id,
+                                      text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
+                bot.register_next_step_handler(message, transaction)
 
         @bot.message_handler(content_types=['text'])
         def do_button(message):
