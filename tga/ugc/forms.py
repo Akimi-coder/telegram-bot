@@ -2,6 +2,7 @@ from django import forms
 from .models import Profile
 from .models import Type
 from .models import TypeOfRequisites
+from .models import Admin
 
 
 class ProfileForm(forms.ModelForm):
@@ -12,17 +13,28 @@ class ProfileForm(forms.ModelForm):
         )
 
 
+class AdminForm(forms.ModelForm):
+    class Meta:
+        model = Admin
+        fields = (
+            'external_id',
+            'name',
+        )
+        widgets = {
+            'external_id': forms.TextInput,
+            'name': forms.TextInput,
+        }
+
+
 class TypeFrom(forms.ModelForm):
     class Meta:
         model = Type
         fields = (
             'type',
             'number',
-            'percent',
         )
         widgets = {
             'number': forms.TextInput,
-            'percent': forms.TextInput,
         }
 
 

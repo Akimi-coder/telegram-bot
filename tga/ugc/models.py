@@ -28,6 +28,23 @@ class Profile(models.Model):
         verbose_name = "Profile"
 
 
+class Admin(models.Model):
+    external_id = models.PositiveIntegerField(
+        verbose_name="User ID",
+        unique=True,
+    )
+    name = models.TextField(
+        verbose_name="name",
+        null=True
+    )
+
+    def __str__(self):
+        return f"#{self.external_id}"
+
+    class Meta:
+        verbose_name = "Admin"
+
+
 class Message(models.Model):
     message_id = models.PositiveIntegerField(
         verbose_name="Message ID",
@@ -83,6 +100,11 @@ class TypeOfRequisites(models.Model):
         choices=CHOICES,
 
     )
+    percent = models.TextField(
+        verbose_name="Percent",
+        null=True,
+        editable=True,
+    )
 
     def __str__(self):
         return f"#{self.typeOfRequisites}"
@@ -100,11 +122,6 @@ class Type(models.Model):
     )
     number = models.TextField(
         verbose_name="Number",
-    )
-    percent = models.TextField(
-        verbose_name="Percent",
-        null=True,
-        editable=True,
     )
 
     def __str__(self):

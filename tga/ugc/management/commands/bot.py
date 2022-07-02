@@ -14,6 +14,9 @@ from ugc.models import Profile
 from ugc.models import Message
 from ugc.models import Requisites
 from ugc.models import TypeOfRequisites
+from ugc.models import Type
+from ugc.models import Admin
+
 import requests
 from bs4 import BeautifulSoup
 
@@ -165,8 +168,7 @@ class Command(BaseCommand):
             keyboard1 = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
             keyboard1.add(types.KeyboardButton(f"{self.languages[p.language]['price']}💲"),
                           types.KeyboardButton(f"{self.languages[p.language]['help']}❓")) \
-                .add(types.KeyboardButton("Total bids"), types.KeyboardButton('Total trade ™'),
-                     types.KeyboardButton(f"{self.languages[p.language]['buy crypto']} 🔄"))
+                .add(types.KeyboardButton(f"{self.languages[p.language]['buy crypto']} 🔄"))
             bot.send_message(message.chat.id,
                              text=f"{self.languages[p.language]['Hi']} <b>{message.from_user.first_name}</b>! {self.languages[p.language]['Hi Bot']}",
                              parse_mode=ParseMode.HTML, reply_markup=keyboard1)
@@ -231,14 +233,18 @@ class Command(BaseCommand):
                 external_id=id,
             )
             if call.data == "credit card":
-                p.payment_type = "Credit card"
+                p.payment_type = "credit card"
             if call.data == "sim card":
-                p.payment_type = "Sim card"
+                p.payment_type = "sim card"
             if call.data == "wallet":
-                p.payment_type = "Wallet"
+                p.payment_type = "wallet"
             p.save()
+            t = TypeOfRequisites.objects.get(
+                typeOfRequisites=p.payment_type,
+            )
+            price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
             bot.send_message(chat_id=call.message.chat.id,
-                             text=f"{self.languages[p.language]['Enter amount']} {get_btc_to_rub()} ₽")
+                             text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
             bot.register_next_step_handler(call.message, transaction)
 
         @bot.callback_query_handler(func=lambda call: call.data == 'btc' or call.data == 'change')
@@ -247,9 +253,14 @@ class Command(BaseCommand):
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
             )
+
             if call.data == 'change':
+                t = TypeOfRequisites.objects.get(
+                    typeOfRequisites=p.payment_type,
+                )
+                price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
                 bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
-                                      text=f"{self.languages[p.language]['Enter amount']} {get_btc_to_rub()} ₽")
+                                      text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
                 bot.register_next_step_handler(call.message, transaction)
             else:
                 bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
@@ -270,12 +281,19 @@ class Command(BaseCommand):
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
             )
+            t = TypeOfRequisites.objects.get(
+                typeOfRequisites=p.payment_type,
+            )
             Requisites(
                 profile=p,
                 paymentUserType=p.payment_type,
-                btcPrice=price / get_btc_to_rub(),
+                btcPrice=price / (get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))),
                 fiatPrice=str(price) + " ₽",
             ).save()
+            for i in Admin.objects.all():
+                bot.send_message(chat_id=i.external_id,
+                                 text=f"New request",
+                                 parse_mode=ParseMode.HTML)
 
         @bot.callback_query_handler(func=lambda call: call.data == "confirm")
         def confirm(call):
@@ -350,21 +368,19 @@ class Command(BaseCommand):
             )
             if message.text == "🇷🇺":
                 p.language = "ru"
+                p.payment_type = "credit card"
                 p.save()
                 setLanguage(message)
             if message.text == "🇺🇸":
                 p.language = "eng"
+                p.payment_type = "credit card"
                 p.save()
+                setLanguage(message)
             if message.text == f"{self.languages[p.language]['help']}❓":
                 bot.send_message(message.chat.id,
-                                 text=f"List of all commands:\n/price\n/total_bids_amount\n/total_trade_ask_and_bid")
+                                 text=f"Если возникли вопросы обращайтесь к @suppbitpay")
             if message.text == f"{self.languages[p.language]['price']}💲":
                 bot.send_message(message.chat.id, text=f"{get_btc_to_rub()} ₽")
-            if message.text == "Total bids" and message.text == "":
-                bot.send_message(message.chat.id, text=get_depth())
-            if message.text == "Total trade ™" and message.text == "":
-                bot.send_message(message.chat.id, text=get_trades())
-                setLanguage(message)
             if message.text == f"{self.languages[p.language]['buy crypto']} 🔄":
                 exchange(message)
 
