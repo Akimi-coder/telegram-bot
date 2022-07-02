@@ -33,10 +33,11 @@ def get_info():
 
 
 def get_btc_to_rub(coin1="BTC", coin2="RUB"):
-    r = requests.get(f"https://freecurrencyrates.com/en/convert-{coin1}-{coin2}")
+    r = requests.get("https://www.coingecko.com/en/coins/bitcoin/rub")
     soup = BeautifulSoup(r.content, "html.parser")
-    res = soup.find(id="value_to")
-    return float(res['value'])
+
+    res = soup.findAll("span", class_="no-wrap")
+    return float(res[0].text[1:].replace(',', ''))
 
 
 # Инфа о парах за последние 24 часа
