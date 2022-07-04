@@ -287,7 +287,8 @@ class Command(BaseCommand):
             )
 
             file = open("logs.txt", "a")
-            file.write(f"id: {id}  сума обміну: {str(price)}₽ BTC: {get_btc_to_rub()} BTC разом з %: {(get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100)))} реквізити: {p.payment_type} дата: {datetime.now()}\n")
+            file.write(
+                f"id: {id}  сума обміну: {str(price)}₽ BTC: {get_btc_to_rub()} BTC разом з %: {(get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100)))} реквізити: {p.payment_type} дата: {datetime.now()}\n")
             file.close()
 
             Requisites(
@@ -368,13 +369,13 @@ class Command(BaseCommand):
             price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
             try:
                 bot.send_message(chat_id=message.chat.id,
-                             text=f"{self.languages[p.language]['Amount']} {message.text} ₽  {self.languages[p.language]['in btc']}: {float(message.text) / price}",
-                             parse_mode=ParseMode.HTML, reply_markup=keyboard)
+                                 text=f"{self.languages[p.language]['Amount']} {message.text} ₽  {self.languages[p.language]['in btc']}: {float(message.text) / price}",
+                                 parse_mode=ParseMode.HTML, reply_markup=keyboard)
             except:
                 bot.send_message(chat_id=message.chat.id,
-                                      text="Пожалуйста введите число")
+                                 text="Пожалуйста введите число")
                 bot.send_message(chat_id=message.chat.id,
-                                      text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
+                                 text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
                 bot.register_next_step_handler(message, transaction)
 
         @bot.message_handler(content_types=['text'])
@@ -383,18 +384,18 @@ class Command(BaseCommand):
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
             )
+            p.payment_type = "credit card"
+            p.save()
             t = TypeOfRequisites.objects.get(
                 typeOfRequisites=p.payment_type,
             )
             price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
             if message.text == "🇷🇺":
                 p.language = "ru"
-                p.payment_type = "credit card"
                 p.save()
                 setLanguage(message)
             if message.text == "🇺🇸":
                 p.language = "eng"
-                p.payment_type = "credit card"
                 p.save()
                 setLanguage(message)
             if message.text == f"{self.languages[p.language]['help']}❓":
