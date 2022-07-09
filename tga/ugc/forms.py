@@ -3,6 +3,7 @@ from .models import Profile
 from .models import Type
 from .models import TypeOfRequisites
 from .models import Admin
+import datetime as d
 
 
 class ProfileForm(forms.ModelForm):
@@ -47,4 +48,5 @@ class TypeOfRequisitesForm(forms.ModelForm):
         )
         widgets = {
             'typeOfRequisites': forms.TextInput,
+            'active': forms.Select(choices=TypeOfRequisites.CHOICES)
         }

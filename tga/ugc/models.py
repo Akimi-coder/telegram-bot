@@ -4,6 +4,10 @@ from django.db import models
 # Create your models here.
 
 class Profile(models.Model):
+    CHOICES = (
+        ('Lock', 'Lock'),
+        ('Unlock', 'Unlock'),
+    )
     external_id = models.PositiveIntegerField(
         verbose_name="User ID",
         unique=True,
@@ -18,6 +22,23 @@ class Profile(models.Model):
     )
     payment_type = models.TextField(
         verbose_name="Payment type",
+        null=True,
+    )
+    last_lime = models.TextField(
+        verbose_name="Last time of Request",
+        null=True,
+    )
+    request_count = models.TextField(
+        verbose_name="Count of Request",
+        null=True,
+    )
+    status = models.TextField(
+        verbose_name="Status",
+        choices=CHOICES,
+        null=True,
+    )
+    access = models.TextField(
+        verbose_name='Access',
         null=True,
     )
 
@@ -160,3 +181,32 @@ class Requisites(models.Model):
 
     class Meta:
         verbose_name = "Requisites"
+
+
+class Config(models.Model):
+    min_amount = models.TextField(null=True)
+
+    class Meta:
+        verbose_name = "Config"
+
+
+class Request(models.Model):
+    profile = models.ForeignKey(
+        to='ugc.Profile',
+        verbose_name="Profile",
+        on_delete=models.PROTECT,
+    )
+    type = models.TextField(
+        verbose_name="Requisites Type",
+        null=True,
+    )
+    amount = models.TextField(
+        verbose_name="Amount",
+    )
+    time = models.TextField(
+        verbose_name="time",
+        null=True,
+    )
+
+    class Meta:
+        verbose_name = "Request"

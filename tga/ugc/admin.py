@@ -13,6 +13,8 @@ from .models import TypeOfRequisites
 from .models import Type
 from .models import Requisites
 from .models import Admin
+from .models import Config
+from .models import Request
 import telebot
 from django.conf import settings
 from telebot import types
@@ -71,10 +73,14 @@ def requisites(modeladmin, request, queryset):
         mes = bot.send_message(chat_id=obj.profile.external_id,
                                text=f"{languages[obj.profile.language]['send']} {obj.fiatPrice} {languages[obj.profile.language][obj.type.type.typeOfRequisites]} {obj.type.number}",
                                reply_markup=keyboard)
-        Message(
+        m = Message(
             message_id=mes.message_id,
             btcPrice=obj.btcPrice,
-        ).save()
+        )
+        m.save()
+        bot.send_message(chat_id=obj.profile.external_id,
+                               text=f"ID вашей заявки {m.id}")
+
     queryset.delete()
 
 
@@ -88,18 +94,18 @@ def reject_request(modeladmin, request, queryset):
 
 
 @admin.register(TypeOfRequisites)
-class MessageAdmin(admin.ModelAdmin):
+class TypeOfRequisitesAdmin(admin.ModelAdmin):
     list_display = ('typeOfRequisites', 'percent', 'active')
     list_editable = ('active',)
     form = TypeOfRequisitesForm
     formfield_overrides = {
         models.TextField: {'widget': Textarea(attrs={'rows': 0, 'cols': 0})},
     }
-    list_editable = ('percent',)
+    list_editable = ('percent','active')
 
 
 @admin.register(Type)
-class MessageAdmin(admin.ModelAdmin):
+class TypeAdmin(admin.ModelAdmin):
     list_display = ('id', 'type', 'number')
     form = TypeFrom
 
@@ -114,7 +120,8 @@ class MessageAdmin(admin.ModelAdmin):
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('id', "external_id", "current_account", "language", "payment_type")
+    list_display = ('id', "external_id", "current_account", "language", "payment_type", "last_lime", "request_count","status")
+    list_editable = ('status',)
     form = ProfileForm
 
 
@@ -129,3 +136,16 @@ class ProfileAdmin(admin.ModelAdmin):
     list_display = ('id', "external_id", "name")
     form = AdminForm
 
+
+@admin.register(Config)
+class OptionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'min_amount',)
+    formfield_overrides = {
+        models.TextField: {'widget': Textarea(attrs={'rows': 0, 'cols': 0})},
+    }
+    list_editable = ('min_amount',)
+
+
+@admin.register(Request)
+class OptionAdmin(admin.ModelAdmin):
+    list_display = ('id', 'profile',"type","amount",'time')
