@@ -120,7 +120,7 @@ class MessageAdmin(admin.ModelAdmin):
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('id', "external_id", "current_account", "language", "payment_type", "last_lime", "request_count","status")
+    list_display = ('id', "external_id", "current_account", "language", "payment_type", "last_lime", "request_count","status","access")
     list_editable = ('status',)
     form = ProfileForm
 

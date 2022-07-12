@@ -235,7 +235,7 @@ class Command(BaseCommand):
                                      parse_mode=ParseMode.HTML)
             else:
                 bot.send_message(chat_id=message.chat.id,
-                                 text=f"Вы находитесь в черном списке",
+                                 text=f"Вы не можете создавать заявки на обмен",
                                  parse_mode=ParseMode.HTML)
 
         def getAdress(message):
@@ -446,6 +446,8 @@ class Command(BaseCommand):
             id = message.chat.id
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
+                access = "allowed",
+                status="Unlock"
             )
 
             p.payment_type = "credit card"
