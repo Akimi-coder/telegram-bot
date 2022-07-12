@@ -446,10 +446,10 @@ class Command(BaseCommand):
             id = message.chat.id
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
-
             )
-            p.access = "allowed",
-            p.status = "Unlock",
+            if p.access is None and p.status is None:
+                p.access = "allowed"
+                p.status = "Unlock"
             p.payment_type = "credit card"
             if p.last_lime is None and p.request_count is None:
                 p.last_lime = datetime.now()
