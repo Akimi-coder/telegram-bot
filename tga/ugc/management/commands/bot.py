@@ -447,7 +447,7 @@ class Command(BaseCommand):
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
                 access = "allowed",
-                status="Unlock"
+                status="Unlock",
             )
 
             p.payment_type = "credit card"
