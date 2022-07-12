@@ -291,7 +291,7 @@ class Command(BaseCommand):
                 bot.register_next_step_handler(call.message, transaction)
             else:
                 bot.send_message(chat_id=call.message.chat.id,
-                                 text=f"На один и тот же реквизит можно создать только 1 уникальную сумму в течение 12 часов")
+                                 text=f"В данный момент на эту сумму нельзя создать заявку попробуйте позже или введите другую сумму")
 
         @bot.callback_query_handler(func=lambda call: call.data == 'btc' or call.data == 'change')
         def btc_buy_handler(call):
