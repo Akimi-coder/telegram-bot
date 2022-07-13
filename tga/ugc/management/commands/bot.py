@@ -215,11 +215,11 @@ class Command(BaseCommand):
             if p.status == "Unlock":
                 t = p.last_lime
                 time = datetime.strptime(t, '%Y-%m-%d %H:%M:%S.%f')
-                if int(p.request_count) <= 5:
+                if int(p.request_count) <= 3:
                     if time + timedelta(minutes=30) <= datetime.now():
                         p.request_count = 0
                         p.save()
-                    if int(p.request_count) == 5 and not (time + timedelta(minutes=30) <= datetime.now()):
+                    if int(p.request_count) >= 3 and not (time + timedelta(minutes=30) <= datetime.now()):
                         bot.send_message(chat_id=message.chat.id,
                                          text=f"Доступно только 3 запроса в 30 минут",
                                          parse_mode=ParseMode.HTML)
@@ -261,37 +261,22 @@ class Command(BaseCommand):
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
             )
-            for r in Request.objects.all():
-                if r.profile == p:
-                    if call.data == r.type:
-                        time = datetime.strptime(r.time, '%Y-%m-%d %H:%M:%S.%f')
-                        if time + timedelta(hours=12) <= datetime.now():
-                            p.access = "allowed"
-                            p.save()
-                        else:
-                            p.access = "denied"
-                            p.save()
-
-            if p.access == "allowed":
-                if call.data == "credit card":
-                    p.payment_type = "credit card"
-                if call.data == "sim card":
-                    p.payment_type = "sim card"
-                if call.data == "wallet":
-                    p.payment_type = "wallet"
-                if call.data == "qiwi":
-                    p.payment_type = "qiwi"
-                p.save()
-                t = TypeOfRequisites.objects.get(
-                    typeOfRequisites=p.payment_type,
-                )
-                price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
-                bot.send_message(chat_id=call.message.chat.id,
-                                 text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
-                bot.register_next_step_handler(call.message, transaction)
-            else:
-                bot.send_message(chat_id=call.message.chat.id,
-                                 text=f"В данный момент на эту сумму нельзя создать заявку попробуйте позже или введите другую сумму")
+            if call.data == "credit card":
+                p.payment_type = "credit card"
+            if call.data == "sim card":
+                p.payment_type = "sim card"
+            if call.data == "wallet":
+                p.payment_type = "wallet"
+            if call.data == "qiwi":
+                p.payment_type = "qiwi"
+            p.save()
+            t = TypeOfRequisites.objects.get(
+                typeOfRequisites=p.payment_type,
+            )
+            price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
+            bot.send_message(chat_id=call.message.chat.id,
+                             text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
+            bot.register_next_step_handler(call.message, transaction)
 
         @bot.callback_query_handler(func=lambda call: call.data == 'btc' or call.data == 'change')
         def btc_buy_handler(call):
@@ -423,17 +408,39 @@ class Command(BaseCommand):
             )
             price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
             try:
-                if float(message.text) > float(Config.objects.all()[0].min_amount):
+                for r in Request.objects.all():
+                    if r.profile == p:
+                        if p.payment_type == r.type and float(message.text) == float(r.amount):
+                            time = datetime.strptime(r.time, '%Y-%m-%d %H:%M:%S.%f')
+                            if time + timedelta(hours=12) <= datetime.now():
+                                p.access = "allowed"
+                                p.save()
+                            else:
+                                p.access = "denied"
+                                p.save()
+                            break
+                        else:
+                            p.access = "allowed"
+                            p.save()
+                    else:
+                        p.access = "allowed"
+                        p.save()
+                if p.access == "allowed":
+                    if float(message.text) > float(Config.objects.all()[0].min_amount):
 
-                    bot.send_message(chat_id=message.chat.id,
-                                     text=f"{self.languages[p.language]['Amount']} {message.text} ₽  {self.languages[p.language]['in btc']}: {float(message.text) / price}",
-                                     parse_mode=ParseMode.HTML, reply_markup=keyboard)
+                        bot.send_message(chat_id=message.chat.id,
+                                         text=f"{self.languages[p.language]['Amount']} {message.text} ₽  {self.languages[p.language]['in btc']}: {float(message.text) / price}",
+                                         parse_mode=ParseMode.HTML, reply_markup=keyboard)
+                    else:
+                        bot.send_message(chat_id=message.chat.id,
+                                         text=f"Минимальная сумма покупки BTC {Config.objects.all()[0].min_amount}₽")
+                        bot.send_message(chat_id=message.chat.id,
+                                         text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
+                        bot.register_next_step_handler(message, transaction)
                 else:
                     bot.send_message(chat_id=message.chat.id,
-                                     text=f"Минимальная сумма покупки BTC {Config.objects.all()[0].min_amount}₽")
-                    bot.send_message(chat_id=message.chat.id,
-                                     text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
-                    bot.register_next_step_handler(message, transaction)
+                                     text=f"В данный момент на эту сумму нельзя создать заявку попробуйте позже или введите другую сумму")
+
             except:
                 bot.send_message(chat_id=message.chat.id,
                                  text="Пожалуйста введите число")
