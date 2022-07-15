@@ -51,7 +51,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'tga.urls'
-CSRF_TRUSTED_ORIGINS = ['btcobmen.io']
+CSRF_TRUSTED_ORIGINS = ['https://btcobmen.io']
 CORS_ALLOW_CREDENTIALS = True
 
 CORS_ORIGIN_ALLOW_ALL = True
