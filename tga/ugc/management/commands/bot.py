@@ -319,7 +319,7 @@ class Command(BaseCommand):
 
             file = open("logs.txt", "a")
             file.write(
-                f"id: {id}  сума обміну: {str(price)}₽ BTC: {get_btc_to_rub()} BTC разом з %: {(get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100)))} реквізити: {p.payment_type} дата: {datetime.now()}\n")
+                f'id: {id}  Sum: {str(price)}₽ BTC: {get_btc_to_rub()} BTC with %: {(get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100)))} rekvizit: {p.payment_type} date: {datetime.now()}\n')
             file.close()
 
             Requisites(
