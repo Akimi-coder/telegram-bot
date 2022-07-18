@@ -68,19 +68,19 @@ def requisites(modeladmin, request, queryset):
     bot = telebot.TeleBot(settings.TOKEN)
     keyboard = types.InlineKeyboardMarkup()
     for obj in queryset:
+        m = Message(
+            btcPrice=obj.btcPrice,
+        )
+        m.save()
+        bot.send_message(chat_id=obj.profile.external_id,
+                         text=f"ID вашей заявки {m.id}")
         keyboard.row(
             types.InlineKeyboardButton(text=f"{languages[obj.profile.language]['confirm']}", callback_data="confirm"))
         mes = bot.send_message(chat_id=obj.profile.external_id,
                                text=f"{languages[obj.profile.language]['send']} {obj.fiatPrice} {languages[obj.profile.language][obj.type.type.typeOfRequisites]} {obj.type.number}",
                                reply_markup=keyboard)
-        m = Message(
-            message_id=mes.message_id,
-            btcPrice=obj.btcPrice,
-        )
+        m.message_id = mes.message_id
         m.save()
-        bot.send_message(chat_id=obj.profile.external_id,
-                               text=f"ID вашей заявки {m.id}")
-
     queryset.delete()
 
 

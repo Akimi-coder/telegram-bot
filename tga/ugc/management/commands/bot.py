@@ -274,7 +274,7 @@ class Command(BaseCommand):
                 typeOfRequisites=p.payment_type,
             )
             price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
-            bot.send_message(chat_id=call.message.chat.id,
+            bot.edit_message_text(chat_id=call.message.chat.id,message_id=call.message.message_id,
                              text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
             bot.register_next_step_handler(call.message, transaction)
 
@@ -317,7 +317,7 @@ class Command(BaseCommand):
                 typeOfRequisites=p.payment_type,
             )
 
-            file = open("logs.txt", "a")
+            file = open("logs.txt", "a", encoding="utf-8")
             file.write(
                 f'id: {id}  Sum: {str(price)}₽ BTC: {get_btc_to_rub()} BTC with %: {(get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100)))} rekvizit: {p.payment_type} date: {datetime.now()}\n')
             file.close()
@@ -356,7 +356,7 @@ class Command(BaseCommand):
             keyboard.row(
                 types.InlineKeyboardButton(text=f"{self.languages[p.language]['butStatus']}", callback_data="status"))
             if call.data == "confirm":
-                bot.send_message(chat_id=call.message.chat.id,
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
                                  text=f"{self.languages[p.language]['Wait request']}",
                                  parse_mode=ParseMode.HTML, reply_markup=keyboard)
                 m, _ = Message.objects.get_or_create(
