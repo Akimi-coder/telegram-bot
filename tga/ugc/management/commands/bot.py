@@ -321,13 +321,18 @@ class Command(BaseCommand):
             file.write(
                 f'id: {id}  Sum: {str(price)}₽ BTC: {get_btc_to_rub()} BTC with %: {(get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100)))} rekvizit: {p.payment_type} date: {datetime.now()}\n')
             file.close()
-
+            count = 0
+            for i in Message.objects.all():
+                if i.payment_type == p.payment_type:
+                    count = count + 1
             Requisites(
                 profile=p,
                 paymentUserType=p.payment_type,
                 btcPrice=price / (get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))),
                 fiatPrice=str(price) + " ₽",
+                payment_count=count,
             ).save()
+            count = 0
             Request(
                 profile=p,
                 type=p.payment_type,
@@ -440,6 +445,7 @@ class Command(BaseCommand):
                 else:
                     bot.send_message(chat_id=message.chat.id,
                                      text=f"В данный момент на эту сумму нельзя создать заявку попробуйте позже или введите другую сумму")
+                    bot.register_next_step_handler(message, transaction)
 
             except:
                 bot.send_message(chat_id=message.chat.id,

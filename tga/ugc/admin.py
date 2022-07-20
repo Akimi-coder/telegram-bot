@@ -40,7 +40,7 @@ languages = {
         'confirm': 'Подтвердить отправку',
         'credit card': 'на номер карты',
         'sim card': 'на номер сим карты',
-        'wallet': 'на кошелек',
+        'qiwi': 'на qiwi кошелек',
     },
     'eng': {
         'send': 'Please send',
@@ -49,7 +49,7 @@ languages = {
         'confirm': 'Confirm',
         'credit card': 'to credit card',
         'sim card': 'to sim card',
-        'wallet': 'to wallet',
+        'qiwi': 'to qiwi',
     }
 }
 
@@ -80,6 +80,7 @@ def requisites(modeladmin, request, queryset):
                                text=f"{languages[obj.profile.language]['send']} {obj.fiatPrice} {languages[obj.profile.language][obj.type.type.typeOfRequisites]} {obj.type.number}",
                                reply_markup=keyboard)
         m.message_id = mes.message_id
+        m.payment_type = obj.paymentUserType
         m.save()
     queryset.delete()
 
@@ -112,7 +113,7 @@ class TypeAdmin(admin.ModelAdmin):
 
 @admin.register(Requisites)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('id', 'paymentUserType', 'profile', 'btcPrice', 'fiatPrice', 'type', 'created_at')
+    list_display = ('id', 'paymentUserType', 'profile', 'btcPrice', 'fiatPrice', 'type','payment_count', 'created_at')
     list_editable = ('type',)
 
     actions = [requisites]
@@ -127,12 +128,12 @@ class ProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('id', 'message_id', 'profile', 'btcPrice', 'fiatPrice', 'account', 'status', 'created_at')
+    list_display = ('id', 'message_id', 'profile', 'btcPrice', 'fiatPrice', 'account', 'status','payment_type', 'created_at')
     actions = [confirmed_request, reject_request]
 
 
 @admin.register(Admin)
-class ProfileAdmin(admin.ModelAdmin):
+class ProfAdmin(admin.ModelAdmin):
     list_display = ('id', "external_id", "name")
     form = AdminForm
 

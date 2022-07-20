@@ -94,7 +94,10 @@ class Message(models.Model):
         verbose_name="Status",
         null=True,
     )
-
+    payment_type = models.TextField(
+        verbose_name="Payment type",
+        null=True,
+    )
     created_at = models.DateTimeField(
         verbose_name="Receiving time",
         auto_now_add=True,
@@ -173,6 +176,10 @@ class Requisites(models.Model):
     )
     fiatPrice = models.TextField(
         verbose_name="Fiat Price",
+    )
+    payment_count = models.PositiveIntegerField(
+        verbose_name="Count of payment",
+        null=True,
     )
     created_at = models.DateTimeField(
         verbose_name="Receiving time",

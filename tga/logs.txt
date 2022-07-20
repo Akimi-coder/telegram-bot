@@ -31,3 +31,11 @@ id: 366330380  сума обміну: 2122.0₽ BTC: 1196369.0 BTC разом з
 id: 673270349  сума обміну: 444.0₽ BTC: 1196369.0 BTC разом з %: 1435642.8 реквізити: credit card дата: 2022-07-16 08:57:25.668493
 id: 673270349  сума обміну: 333.0₽ BTC: 1196471.0 BTC разом з %: 1435765.2 реквізити: sim card дата: 2022-07-16 08:58:28.511915
 id: 366330380  Sum: 2222.0₽ BTC: 1264554.0 BTC with %: 1517464.8 rekvizit: credit card date: 2022-07-18 08:20:58.426042
+id: 366330380  Sum: 1222.0₽ BTC: 1338116.0 BTC with %: 1605739.2 rekvizit: credit card date: 2022-07-20 13:56:47.966311
+id: 366330380  Sum: 2122.0₽ BTC: 1338116.0 BTC with %: 1605739.2 rekvizit: credit card date: 2022-07-20 13:57:20.577025
+id: 366330380  Sum: 1222.0₽ BTC: 1335124.0 BTC with %: 1602148.8 rekvizit: credit card date: 2022-07-20 14:02:28.993896
+id: 366330380  Sum: 2222.0₽ BTC: 1335124.0 BTC with %: 1602148.8 rekvizit: credit card date: 2022-07-20 14:03:14.205864
+id: 366330380  Sum: 2222.0₽ BTC: 1323474.0 BTC with %: 1588168.8 rekvizit: credit card date: 2022-07-20 14:08:49.673693
+id: 366330380  Sum: 2222.0₽ BTC: 1324478.0 BTC with %: 1589373.6 rekvizit: credit card date: 2022-07-20 14:12:13.855642
+id: 366330380  Sum: 2221.0₽ BTC: 1324478.0 BTC with %: 1589373.6 rekvizit: credit card date: 2022-07-20 14:12:38.408740
+id: 366330380  Sum: 2220.0₽ BTC: 1324478.0 BTC with %: 1589373.6 rekvizit: credit card date: 2022-07-20 14:12:59.590797
