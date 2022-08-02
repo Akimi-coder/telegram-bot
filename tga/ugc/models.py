@@ -94,6 +94,10 @@ class Message(models.Model):
         verbose_name="Status",
         null=True,
     )
+    present = models.TextField(
+        verbose_name="Present",
+        null=True,
+    )
     payment_type = models.TextField(
         verbose_name="Payment type",
         null=True,

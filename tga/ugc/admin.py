@@ -57,10 +57,32 @@ languages = {
 @admin.action(description='Confirmed')
 def confirmed_request(modeladmin, request, queryset):
     bot = telebot.TeleBot(settings.TOKEN)
+    import random
+    code_length = 10
+
+    characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789"
+
+    code = ""
+    chekcher = False
+    while(True):
+        for index in range(code_length):
+            code = code + random.choice(characters)
+
+        for i in Message.objects.all():
+            if (i.present == code):
+                chekcher = False
+                break
+            else:
+                chekcher = True
+
+        if(chekcher):
+            break
     for obj in queryset:
         bot.send_message(chat_id=obj.profile.external_id,
                          text=f"{languages[obj.profile.language]['confirmed']}")
-    queryset.update(status="done")
+        bot.send_message(chat_id=obj.profile.external_id,
+                         text=f"Код для участия в  конкурсе {code}")
+    queryset.update(status="done",present=code)
 
 
 @admin.action(description='Requisites')
@@ -128,7 +150,7 @@ class ProfileAdmin(admin.ModelAdmin):
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('id', 'message_id', 'profile', 'btcPrice', 'fiatPrice', 'account', 'status','payment_type', 'created_at')
+    list_display = ('id', 'message_id', 'profile', 'btcPrice', 'fiatPrice', 'account', 'status','payment_type','present', 'created_at')
     actions = [confirmed_request, reject_request]
 
 
