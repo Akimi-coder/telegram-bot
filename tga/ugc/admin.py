@@ -21,6 +21,7 @@ from telebot import types
 from django.db.models import F
 import requests
 from bs4 import BeautifulSoup
+from rangefilter.filter import DateRangeFilter, DateTimeRangeFilter
 
 
 def get_btc_to_rub(coin1="BTC", coin2="RUB"):
@@ -152,6 +153,7 @@ class ProfileAdmin(admin.ModelAdmin):
 class MessageAdmin(admin.ModelAdmin):
     list_display = ('id', 'message_id', 'profile', 'btcPrice', 'fiatPrice', 'account', 'status','payment_type','present', 'created_at')
     actions = [confirmed_request, reject_request]
+    list_filter = (('created_at', DateRangeFilter), ('created_at', DateTimeRangeFilter), "created_at")
 
 
 @admin.register(Admin)
