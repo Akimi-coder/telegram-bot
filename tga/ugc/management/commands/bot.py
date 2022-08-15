@@ -464,6 +464,7 @@ class Command(BaseCommand):
                 p.access = "allowed"
                 p.status = "Unlock"
             p.payment_type = "credit card"
+            p.language = "ru"
             if p.last_lime is None and p.request_count is None:
                 p.last_lime = datetime.now()
                 p.request_count = 0
@@ -472,14 +473,6 @@ class Command(BaseCommand):
                 typeOfRequisites=p.payment_type,
             )
             price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
-            if message.text == "🇷🇺":
-                p.language = "ru"
-                p.save()
-                setLanguage(message)
-            if message.text == "🇺🇸":
-                p.language = "eng"
-                p.save()
-                setLanguage(message)
             if message.text == f"{self.languages[p.language]['help']}❓":
                 bot.send_message(message.chat.id,
                                  text=f"Если возникли вопросы обращайтесь к @suppbitpay")
