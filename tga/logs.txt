@@ -41,3 +41,4 @@ id: 366330380  Sum: 2221.0₽ BTC: 1324478.0 BTC with %: 1589373.6 rekvizit: cre
 id: 366330380  Sum: 2220.0₽ BTC: 1324478.0 BTC with %: 1589373.6 rekvizit: credit card date: 2022-07-20 14:12:59.590797
 id: 366330380  Sum: 2222.0₽ BTC: 1442814.0 BTC with %: 1731376.8 rekvizit: credit card date: 2022-08-02 05:54:16.833136
 id: 366330380  Sum: 334.0₽ BTC: 1443025.0 BTC with %: 1731630.0 rekvizit: credit card date: 2022-08-02 06:02:54.036304
+id: 366330380  Sum: 2222.0₽ BTC: 1217268.0 BTC with %: 1460721.6 rekvizit: credit card date: 2022-08-29 08:53:27.039132

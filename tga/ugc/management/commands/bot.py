@@ -131,11 +131,12 @@ class Command(BaseCommand):
             'sim card': 'Сим карта',
             'wallet': 'Кошелек',
             'qiwi': "Qiwi",
-            'payment type': 'Пожалуйста выберите способ оплаты'
+            'payment type': 'Пожалуйста выберите способ оплаты',
+            'clean crypto': 'Чистка BTC 🪙',
+            'commission': 'Комиссии на чистку:\n\nот 0.05 до 0.1  - 5%\nот 0.1 до 0.5 - 4%\nот 0.5 до 2 - 3%\nот 2 - 2%\n\nВведите сумму которую хотите обменять.\nРекомендация использовать всегда новый адрес'
         },
         'eng': {
             'qiwi': "Qiwi",
-
             'Hi': 'Hello',
             'Hi Bot': 'It is a exchange crypto bot',
             'Select crypto': 'Select crypto which you want to buy',
@@ -168,7 +169,7 @@ class Command(BaseCommand):
         bot = telebot.TeleBot(settings.TOKEN)
         self.stdout.write("Bot started")
 
-        def setLanguage(message):
+        def start(message):
             id = message.chat.id
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
@@ -176,18 +177,19 @@ class Command(BaseCommand):
             keyboard1 = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
             keyboard1.add(types.KeyboardButton(f"{self.languages[p.language]['price']}💲"),
                           types.KeyboardButton(f"{self.languages[p.language]['help']}❓")) \
-                .add(types.KeyboardButton(f"{self.languages[p.language]['buy crypto']} 🔄"))
+                .add(types.KeyboardButton(f"{self.languages[p.language]['buy crypto']} 🔄"),types.KeyboardButton(f"{self.languages[p.language]['clean crypto']}"))
             bot.send_message(message.chat.id,
                              text=f"{self.languages[p.language]['Hi']} <b>{message.from_user.first_name}</b>! {self.languages[p.language]['Hi Bot']}",
                              parse_mode=ParseMode.HTML, reply_markup=keyboard1)
 
         @bot.message_handler(commands=['start'])
         def do_start(message):
-            keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
-            keyboard.add(types.KeyboardButton('🇷🇺'), types.KeyboardButton('🇺🇸'))
-            bot.send_message(message.chat.id,
-                             text=f"Please set a language",
-                             parse_mode=ParseMode.HTML, reply_markup=keyboard)
+            id = message.chat.id
+            p, _ = Profile.objects.get_or_create(
+                external_id=id,
+            )
+            p.language = "ru"
+            start(message)
 
         @bot.message_handler(commands=['help'])
         def do_help(message):
@@ -205,6 +207,16 @@ class Command(BaseCommand):
         @bot.message_handler(commands=['total_trade_ask_and_bid'])
         def total_trade(message):
             bot.send_message(message.chat.id, text=get_trades())
+
+        @bot.message_handler(commands=['clean'])
+        def clean(message):
+            id = message.chat.id
+            p, _ = Profile.objects.get_or_create(
+                external_id=id,
+            )
+            bot.send_message(message.chat.id,
+                             text=f"{self.languages[p.language]['commission']}")
+
 
         @bot.message_handler(commands=['buy'])
         def exchange(message):
@@ -431,17 +443,20 @@ class Command(BaseCommand):
                         p.access = "allowed"
                         p.save()
                 if p.access == "allowed":
-                    if float(message.text) > float(Config.objects.all()[0].min_amount):
+                    for i in TypeOfRequisites.objects.all():
+                        if i.typeOfRequisites == p.payment_type:
+                            if float(message.text) > float(i.min_amount):
 
-                        bot.send_message(chat_id=message.chat.id,
-                                         text=f"{self.languages[p.language]['Amount']} {message.text} ₽  {self.languages[p.language]['in btc']}: {float(message.text) / price}",
-                                         parse_mode=ParseMode.HTML, reply_markup=keyboard)
-                    else:
-                        bot.send_message(chat_id=message.chat.id,
-                                         text=f"Минимальная сумма покупки BTC {Config.objects.all()[0].min_amount}₽")
-                        bot.send_message(chat_id=message.chat.id,
-                                         text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
-                        bot.register_next_step_handler(message, transaction)
+                                bot.send_message(chat_id=message.chat.id,
+                                                 text=f"{self.languages[p.language]['Amount']} {message.text} ₽  {self.languages[p.language]['in btc']}: {float(message.text) / price}",
+                                                 parse_mode=ParseMode.HTML, reply_markup=keyboard)
+                            else:
+                                bot.send_message(chat_id=message.chat.id,
+                                                 text=f"Минимальная сумма покупки BTC {i.min_amount}₽")
+                                bot.send_message(chat_id=message.chat.id,
+                                                 text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
+                                bot.register_next_step_handler(message, transaction)
+
                 else:
                     bot.send_message(chat_id=message.chat.id,
                                      text=f"В данный момент на эту сумму нельзя создать заявку попробуйте позже или введите другую сумму")
@@ -464,11 +479,12 @@ class Command(BaseCommand):
                 p.access = "allowed"
                 p.status = "Unlock"
             p.payment_type = "credit card"
-            p.language = "ru"
+
             if p.last_lime is None and p.request_count is None:
                 p.last_lime = datetime.now()
                 p.request_count = 0
             p.save()
+
             t = TypeOfRequisites.objects.get(
                 typeOfRequisites=p.payment_type,
             )
@@ -480,5 +496,7 @@ class Command(BaseCommand):
                 bot.send_message(message.chat.id, text=f"{price} ₽")
             if message.text == f"{self.languages[p.language]['buy crypto']} 🔄":
                 exchange(message)
+            if message.text == f"{self.languages[p.language]['clean crypto']}":
+                clean(message)
 
         bot.infinity_polling()

@@ -133,6 +133,9 @@ class TypeOfRequisites(models.Model):
         null=True,
         editable=True,
     )
+    min_amount = models.TextField(null=True)
+    max_amount = models.TextField(null=True)
+
 
     def __str__(self):
         return f"#{self.typeOfRequisites}"
@@ -196,6 +199,7 @@ class Requisites(models.Model):
 
 class Config(models.Model):
     min_amount = models.TextField(null=True)
+    max_amount = models.TextField(null=True)
 
     class Meta:
         verbose_name = "Config"

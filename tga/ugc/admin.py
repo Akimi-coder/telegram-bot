@@ -119,19 +119,21 @@ def reject_request(modeladmin, request, queryset):
 
 @admin.register(TypeOfRequisites)
 class TypeOfRequisitesAdmin(admin.ModelAdmin):
-    list_display = ('typeOfRequisites', 'percent', 'active')
+    list_display = ('typeOfRequisites', 'percent', 'active','min_amount','max_amount')
     list_editable = ('active',)
     form = TypeOfRequisitesForm
     formfield_overrides = {
         models.TextField: {'widget': Textarea(attrs={'rows': 0, 'cols': 0})},
     }
-    list_editable = ('percent','active')
+    list_editable = ('percent','active','min_amount','max_amount')
+
 
 
 @admin.register(Type)
 class TypeAdmin(admin.ModelAdmin):
     list_display = ('id', 'type', 'number')
     form = TypeFrom
+
 
 
 @admin.register(Requisites)
@@ -161,14 +163,6 @@ class ProfAdmin(admin.ModelAdmin):
     list_display = ('id', "external_id", "name")
     form = AdminForm
 
-
-@admin.register(Config)
-class OptionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'min_amount',)
-    formfield_overrides = {
-        models.TextField: {'widget': Textarea(attrs={'rows': 0, 'cols': 0})},
-    }
-    list_editable = ('min_amount',)
 
 
 @admin.register(Request)
