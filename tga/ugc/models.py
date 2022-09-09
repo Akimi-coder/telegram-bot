@@ -225,3 +225,41 @@ class Request(models.Model):
 
     class Meta:
         verbose_name = "Request"
+
+
+class CleanBTC(models.Model):
+    message_id = models.PositiveIntegerField(
+        verbose_name="Message ID",
+        unique=True,
+        null=True,
+    )
+    profile = models.ForeignKey(
+        to='ugc.Profile',
+        verbose_name="Profile",
+        on_delete=models.PROTECT,
+        null=True,
+    )
+    btcPrice = models.TextField(
+        verbose_name="BTC Price",
+        null=True,
+    )
+    account = models.TextField(
+        verbose_name="Account",
+        null=True,
+    )
+    status = models.TextField(
+        verbose_name="Status",
+        null=True,
+    )
+    present = models.TextField(
+        verbose_name="Present",
+        null=True,
+    )
+    created_at = models.DateTimeField(
+        verbose_name="Receiving time",
+        auto_now_add=True,
+    )
+
+    class Meta:
+        verbose_name = "Clean BTC"
+

@@ -17,6 +17,7 @@ from ugc.models import Message
 from ugc.models import Requisites
 from ugc.models import TypeOfRequisites
 from ugc.models import Type
+from ugc.models import CleanBTC
 from ugc.models import Admin
 from ugc.models import Config
 from ugc.models import Request
@@ -133,7 +134,8 @@ class Command(BaseCommand):
             'qiwi': "Qiwi",
             'payment type': 'Пожалуйста выберите способ оплаты',
             'clean crypto': 'Чистка BTC 🪙',
-            'commission': 'Комиссии на чистку:\n\nот 0.05 до 0.1  - 5%\nот 0.1 до 0.5 - 4%\nот 0.5 до 2 - 3%\nот 2 - 2%\n\nВведите сумму которую хотите обменять.\nРекомендация использовать всегда новый адрес'
+            'clean price': 'Введите сумму которую хотите обменять',
+            'commission': 'Комиссии на чистку:\n\nот 0.05 до 0.1  - 5%\nот 0.1 до 0.5 - 4%\nот 0.5 до 2 - 3%\nот 2 - 2%\n\nВведите ваш кошелек для приема чистых BTC.\nРекомендация использовать всегда новый адрес'
         },
         'eng': {
             'qiwi': "Qiwi",
@@ -217,15 +219,66 @@ class Command(BaseCommand):
             )
             bot.send_message(message.chat.id,
                              text=f"{self.languages[p.language]['commission']}")
-            bot.register_next_step_handler(message, transaction)
+            bot.register_next_step_handler(message, cleanAddress)
 
-        def clean_btc(message):
+        def priceToClean(message):
+            id = message.chat.id
+            p, _ = Profile.objects.get_or_create(
+                external_id=id,
+            )
+            keyboard = types.InlineKeyboardMarkup()
+            try:
+                m = CleanBTC(btcPrice=str(float(message.text)) + "BTC", )
+                m.save()
+                bot.send_message(chat_id=message.chat.id,
+                                 text=f"ID вашей заявки {m.id}\n"
+                                      f"сумма {message.text} BTC")
+                keyboard.row(
+                    types.InlineKeyboardButton(text=f"Подтвердить",
+                                               callback_data="clean_confirm"))
+                mes = bot.send_message(chat_id=message.chat.id,
+                                       text=f"Отправте свои BTC на адресс 0х2121312412432 и затем нажмите подтвердить",
+                                       reply_markup=keyboard)
+                m.message_id = mes.message_id
+                m.save()
+            except:
+                bot.send_message(chat_id=message.chat.id,
+                                 text="Пожалуйста введите число")
+                bot.send_message(message.chat.id,
+                                 text=f"{self.languages[p.language]['clean price']}")
+                bot.register_next_step_handler(message, priceToClean)
+
+
+
+        def cleanAddress(message):
             id = message.chat.id
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
             )
             getAdress(message)
+            bot.send_message(message.chat.id,
+                             text=f"{self.languages[p.language]['clean price']}")
+            bot.register_next_step_handler(message, priceToClean)
 
+        @bot.callback_query_handler(func=lambda call: call.data == "clean_confirm")
+        def confirm(call):
+            keyboard = types.InlineKeyboardMarkup()
+            id = call.message.chat.id
+            p, _ = Profile.objects.get_or_create(
+                external_id=id,
+            )
+            keyboard.row(
+                types.InlineKeyboardButton(text=f"{self.languages[p.language]['butStatus']}", callback_data="clean_status"))
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
+                                  text=f"{self.languages[p.language]['Wait request']}",
+                                  parse_mode=ParseMode.HTML, reply_markup=keyboard)
+            m, _ = CleanBTC.objects.get_or_create(
+                message_id=call.message.message_id,
+            )
+            m.profile = p
+            m.account = p.current_account
+            m.status = "processed"
+            m.save()
 
         @bot.message_handler(commands=['buy'])
         def exchange(message):
@@ -268,6 +321,10 @@ class Command(BaseCommand):
             p.save()
 
         def getTypeOfRequisites(message):
+            id = message.chat.id
+            p, _ = Profile.objects.get_or_create(
+                external_id=id,
+            )
             getAdress(message)
             keyboard = types.InlineKeyboardMarkup()
             for i in TypeOfRequisites.objects.all():
@@ -397,7 +454,7 @@ class Command(BaseCommand):
                 m.status = "processed"
                 m.save()
 
-        @bot.callback_query_handler(func=lambda call: call.data == "status")
+        @bot.callback_query_handler(func=lambda call: call.data == "status" or call.data == "clean_status")
         def confirm(call):
             id = call.message.chat.id
             p, _ = Profile.objects.get_or_create(
@@ -405,17 +462,26 @@ class Command(BaseCommand):
             )
 
             try:
-                message = Message.objects.get(
-                    profile=p,
-                )
+                if call.data == "status":
+                    message = Message.objects.get(
+                        profile=p,
+                    )
+                if call.data == "clean_status":
+                    message = CleanBTC.objects.get(
+                        profile=p,
+                    )
                 bot.send_message(chat_id=call.message.chat.id,
                                  text=f"Заявка №{message.id} {self.languages[p.language]['butStatus']}: {self.languages[p.language][message.status]}",
                                  parse_mode=ParseMode.HTML)
-
-            except Message.MultipleObjectsReturned:
-                message = Message.objects.filter(
-                    profile=p,
-                )
+            except Message.MultipleObjectsReturned and CleanBTC.MultipleObjectsReturned:
+                if call.data == "status":
+                    message = Message.objects.filter(
+                        profile=p,
+                    )
+                if call.data == "clean_status":
+                    message = CleanBTC.objects.filter(
+                        profile=p,
+                    )
                 str = ""
                 for i in message:
                     str += f"{self.languages[p.language]['request']} №{i.id} {self.languages[p.language]['status']}: {self.languages[p.language][i.status]}\n"

@@ -11,6 +11,7 @@ from .models import Profile
 from .models import Message
 from .models import TypeOfRequisites
 from .models import Type
+from .models import CleanBTC
 from .models import Requisites
 from .models import Admin
 from .models import Config
@@ -65,7 +66,7 @@ def confirmed_request(modeladmin, request, queryset):
 
     code = ""
     chekcher = False
-    while(True):
+    while (True):
         for index in range(code_length):
             code = code + random.choice(characters)
 
@@ -76,15 +77,45 @@ def confirmed_request(modeladmin, request, queryset):
             else:
                 chekcher = True
 
-        if(chekcher):
+        if (chekcher):
             break
     for obj in queryset:
         bot.send_message(chat_id=obj.profile.external_id,
                          text=f"{languages[obj.profile.language]['confirmed']}")
         bot.send_message(chat_id=obj.profile.external_id,
                          text=f"Код для участия в  конкурсе {code}")
-    queryset.update(status="done",present=code)
+    queryset.update(status="done", present=code)
 
+
+@admin.action(description='Confirmed')
+def confirmed_clean_request(modeladmin, request, queryset):
+    bot = telebot.TeleBot(settings.TOKEN)
+    import random
+    code_length = 10
+
+    characters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ123456789"
+
+    code = ""
+    chekcher = False
+    while (True):
+        for index in range(code_length):
+            code = code + random.choice(characters)
+
+        for i in CleanBTC.objects.all():
+            if (i.present == code):
+                chekcher = False
+                break
+            else:
+                chekcher = True
+
+        if (chekcher):
+            break
+    for obj in queryset:
+        bot.send_message(chat_id=obj.profile.external_id,
+                         text=f"{languages[obj.profile.language]['confirmed']}")
+        bot.send_message(chat_id=obj.profile.external_id,
+                         text=f"Код для участия в  конкурсе {code}")
+    queryset.update(status="done", present=code)
 
 @admin.action(description='Requisites')
 def requisites(modeladmin, request, queryset):
@@ -119,14 +150,13 @@ def reject_request(modeladmin, request, queryset):
 
 @admin.register(TypeOfRequisites)
 class TypeOfRequisitesAdmin(admin.ModelAdmin):
-    list_display = ('typeOfRequisites', 'percent', 'active','min_amount','max_amount')
+    list_display = ('typeOfRequisites', 'percent', 'active', 'min_amount', 'max_amount')
     list_editable = ('active',)
     form = TypeOfRequisitesForm
     formfield_overrides = {
         models.TextField: {'widget': Textarea(attrs={'rows': 0, 'cols': 0})},
     }
-    list_editable = ('percent','active','min_amount','max_amount')
-
+    list_editable = ('percent', 'active', 'min_amount', 'max_amount')
 
 
 @admin.register(Type)
@@ -135,10 +165,9 @@ class TypeAdmin(admin.ModelAdmin):
     form = TypeFrom
 
 
-
 @admin.register(Requisites)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('id', 'paymentUserType', 'profile', 'btcPrice', 'fiatPrice', 'type','payment_count', 'created_at')
+    list_display = ('id', 'paymentUserType', 'profile', 'btcPrice', 'fiatPrice', 'type', 'payment_count', 'created_at')
     list_editable = ('type',)
 
     actions = [requisites]
@@ -146,14 +175,18 @@ class MessageAdmin(admin.ModelAdmin):
 
 @admin.register(Profile)
 class ProfileAdmin(admin.ModelAdmin):
-    list_display = ('id', "external_id", "current_account", "language", "payment_type", "last_lime", "request_count","status","access")
+    list_display = (
+        'id', "external_id", "current_account", "language", "payment_type", "last_lime", "request_count", "status",
+        "access")
     list_editable = ('status',)
     form = ProfileForm
 
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ('id', 'message_id', 'profile', 'btcPrice', 'fiatPrice', 'account', 'status','payment_type','present', 'created_at')
+    list_display = (
+        'id', 'message_id', 'profile', 'btcPrice', 'fiatPrice', 'account', 'status', 'payment_type', 'present',
+        'created_at')
     actions = [confirmed_request, reject_request]
     list_filter = (('created_at', DateRangeFilter), ('created_at', DateTimeRangeFilter), "created_at")
 
@@ -164,7 +197,15 @@ class ProfAdmin(admin.ModelAdmin):
     form = AdminForm
 
 
-
 @admin.register(Request)
 class OptionAdmin(admin.ModelAdmin):
-    list_display = ('id', 'profile',"type","amount",'time')
+    list_display = ('id', 'profile', "type", "amount", 'time')
+
+
+@admin.register(CleanBTC)
+class CleanBTCAdmin(admin.ModelAdmin):
+    list_display = (
+        'id', 'message_id', 'profile', 'btcPrice', 'account', 'status', 'present',
+        'created_at')
+    actions = [confirmed_clean_request, reject_request]
+    list_filter = (('created_at', DateRangeFilter), ('created_at', DateTimeRangeFilter), "created_at")
