@@ -557,6 +557,7 @@ class Command(BaseCommand):
                 p.access = "allowed"
                 p.status = "Unlock"
             p.payment_type = "credit card"
+            p.language = "ru"
 
             if p.last_lime is None and p.request_count is None:
                 p.last_lime = datetime.now()
