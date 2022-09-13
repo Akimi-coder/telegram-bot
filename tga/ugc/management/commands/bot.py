@@ -192,6 +192,7 @@ class Command(BaseCommand):
                 external_id=id,
             )
             p.language = "ru"
+            p.save()
             start(message)
 
         @bot.message_handler(commands=['help'])
@@ -556,12 +557,14 @@ class Command(BaseCommand):
             if p.access is None and p.status is None:
                 p.access = "allowed"
                 p.status = "Unlock"
+
             p.payment_type = "credit card"
             p.language = "ru"
 
             if p.last_lime is None and p.request_count is None:
                 p.last_lime = datetime.now()
                 p.request_count = 0
+
             p.save()
 
             t = TypeOfRequisites.objects.get(
