@@ -14,10 +14,10 @@ from datetime import datetime
 import requests
 from ugc.models import Profile
 from ugc.models import Message
-from ugc.models import Requisites
 from ugc.models import TypeOfRequisites
 from ugc.models import Type
 from ugc.models import CleanBTC
+from ugc.models import QueueToReq
 from ugc.models import Admin
 from ugc.models import Config
 from ugc.models import Request
@@ -135,6 +135,13 @@ class Command(BaseCommand):
             'payment type': 'Пожалуйста выберите способ оплаты',
             'clean crypto': 'Чистка BTC 🪙',
             'clean price': 'Введите сумму которую хотите обменять',
+            'send': 'Пожалуйста отправте',
+            'to': 'на адрес',
+            'confirmed': 'Ваш запрос выполнен',
+            'confirm': 'Подтвердить отправку',
+            'to credit card': 'на номер карты',
+            'to sim card': 'на номер сим карты',
+            'to qiwi': 'на qiwi кошелек',
             'commission': 'Комиссии на чистку:\n\nот 0.05 до 0.1  - 5%\nот 0.1 до 0.5 - 4%\nот 0.5 до 2 - 3%\nот 2 - 2%\n\nВведите ваш кошелек для приема чистых BTC.\nРекомендация использовать всегда новый адрес'
         },
         'eng': {
@@ -249,8 +256,6 @@ class Command(BaseCommand):
                                  text=f"{self.languages[p.language]['clean price']}")
                 bot.register_next_step_handler(message, priceToClean)
 
-
-
         def cleanAddress(message):
             id = message.chat.id
             p, _ = Profile.objects.get_or_create(
@@ -269,7 +274,8 @@ class Command(BaseCommand):
                 external_id=id,
             )
             keyboard.row(
-                types.InlineKeyboardButton(text=f"{self.languages[p.language]['butStatus']}", callback_data="clean_status"))
+                types.InlineKeyboardButton(text=f"{self.languages[p.language]['butStatus']}",
+                                           callback_data="clean_status"))
             bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
                                   text=f"{self.languages[p.language]['Wait request']}",
                                   parse_mode=ParseMode.HTML, reply_markup=keyboard)
@@ -386,7 +392,6 @@ class Command(BaseCommand):
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
             )
-
             res = re.findall(r"([+-]?([0-9]+([.][0-9]*)?|[.][0-9]+))(\s₽)", call.message.text)
             price = float(res[0][0])
             bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
@@ -395,40 +400,55 @@ class Command(BaseCommand):
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
             )
-            t = TypeOfRequisites.objects.get(
+            type = TypeOfRequisites.objects.get(
                 typeOfRequisites=p.payment_type,
             )
-
+            keyboard = types.InlineKeyboardMarkup()
             file = open("logs.txt", "a", encoding="utf-8")
             file.write(
-                f'id: {id}  Sum: {str(price)}₽ BTC: {get_btc_to_rub()} BTC with %: {(get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100)))} rekvizit: {p.payment_type} date: {datetime.now()}\n')
+                f'id: {id}  Sum: {str(price)}₽ BTC: {price / get_btc_to_rub()} BTC with %: {(get_btc_to_rub() + (get_btc_to_rub() * (float(type.percent) / 100)))} rekvizit: {p.payment_type} date: {datetime.now()}\n')
             file.close()
-            count = 0
-            for i in Message.objects.all():
-                if i.payment_type == p.payment_type:
-                    count = count + 1
-            Requisites(
-                profile=p,
-                paymentUserType=p.payment_type,
-                btcPrice=price / (get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))),
-                fiatPrice=str(price) + " ₽",
-                payment_count=count,
+
+            for t in Type.objects.all():
+                if t.type.typeOfRequisites == p.payment_type:
+                    if float(t.currentPrice) + float(price) <= float(t.limit):
+                        m = Message(
+                            btcPrice=price / get_btc_to_rub(),
+                        )
+                        m.save()
+                        bot.send_message(chat_id=call.message.chat.id,
+                                         text=f"ID вашей заявки {m.id}")
+                        keyboard.row(
+                            types.InlineKeyboardButton(text=f"{self.languages[p.language]['confirm']}",
+                                                       callback_data="confirm"))
+                        mes = bot.send_message(chat_id=call.message.chat.id,
+                                               text=f"{self.languages[p.language]['send']} {price} ₽ {self.languages[p.language][f'to {t.type.typeOfRequisites}']} {t.number}",
+                                               reply_markup=keyboard)
+                        m.message_id = mes.message_id
+                        m.payment_type = p.payment_type
+                        m.number_of_payment = t.number
+                        m.save()
+                        Request(
+                            profile=p,
+                            type=p.payment_type,
+                            amount=price,
+                            time=datetime.now(),
+                        ).save()
+                        p.last_lime = str(datetime.now())
+                        previous = p.request_count
+                        p.request_count = int(previous) + 1
+                        p.save()
+                        for i in Admin.objects.all():
+                            bot.send_message(chat_id=i.external_id,
+                                             text=f"New request",
+                                             parse_mode=ParseMode.HTML)
+                        return
+            print("Hi")
+            QueueToReq(
+                profile=p.external_id,
+                fiatPrice=str(price),
+                paymentUserType=p.payment_type
             ).save()
-            count = 0
-            Request(
-                profile=p,
-                type=p.payment_type,
-                amount=price,
-                time=datetime.now(),
-            ).save()
-            p.last_lime = str(datetime.now())
-            previous = p.request_count
-            p.request_count = int(previous) + 1
-            p.save()
-            for i in Admin.objects.all():
-                bot.send_message(chat_id=i.external_id,
-                                 text=f"New request",
-                                 parse_mode=ParseMode.HTML)
 
         @bot.callback_query_handler(func=lambda call: call.data == "confirm")
         def confirm(call):
@@ -474,7 +494,7 @@ class Command(BaseCommand):
                 bot.send_message(chat_id=call.message.chat.id,
                                  text=f"Заявка №{message.id} {self.languages[p.language]['butStatus']}: {self.languages[p.language][message.status]}",
                                  parse_mode=ParseMode.HTML)
-            except Message.MultipleObjectsReturned and CleanBTC.MultipleObjectsReturned:
+            except (Message.MultipleObjectsReturned, CleanBTC.MultipleObjectsReturned) as e:
                 if call.data == "status":
                     message = Message.objects.filter(
                         profile=p,
@@ -559,7 +579,6 @@ class Command(BaseCommand):
                 p.status = "Unlock"
 
             p.payment_type = "credit card"
-            p.language = "ru"
 
             if p.last_lime is None and p.request_count is None:
                 p.last_lime = datetime.now()

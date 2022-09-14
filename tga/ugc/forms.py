@@ -33,9 +33,11 @@ class TypeFrom(forms.ModelForm):
         fields = (
             'type',
             'number',
+            'limit'
         )
         widgets = {
             'number': forms.TextInput,
+            'limit': forms.TextInput,
         }
 
 

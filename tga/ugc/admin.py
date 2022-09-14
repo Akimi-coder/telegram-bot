@@ -12,10 +12,10 @@ from .models import Message
 from .models import TypeOfRequisites
 from .models import Type
 from .models import CleanBTC
-from .models import Requisites
 from .models import Admin
 from .models import Config
 from .models import Request
+from .models import QueueToReq
 import telebot
 from django.conf import settings
 from telebot import types
@@ -23,6 +23,8 @@ from django.db.models import F
 import requests
 from bs4 import BeautifulSoup
 from rangefilter.filter import DateRangeFilter, DateTimeRangeFilter
+import datetime
+from datetime import datetime, timedelta
 
 
 def get_btc_to_rub(coin1="BTC", coin2="RUB"):
@@ -66,12 +68,12 @@ def confirmed_request(modeladmin, request, queryset):
 
     code = ""
     chekcher = False
-    while (True):
+    while True:
         for index in range(code_length):
             code = code + random.choice(characters)
 
         for i in Message.objects.all():
-            if (i.present == code):
+            if i.present == code:
                 chekcher = False
                 break
             else:
@@ -80,6 +82,11 @@ def confirmed_request(modeladmin, request, queryset):
         if (chekcher):
             break
     for obj in queryset:
+        payment = Type.objects.get(
+            number=obj.number_of_payment,
+        )
+        payment.currentPrice = str(float(payment.currentPrice) + float(obj.fiatPrice[:obj.fiatPrice.index(' ')]))
+        payment.save()
         bot.send_message(chat_id=obj.profile.external_id,
                          text=f"{languages[obj.profile.language]['confirmed']}")
         bot.send_message(chat_id=obj.profile.external_id,
@@ -116,6 +123,7 @@ def confirmed_clean_request(modeladmin, request, queryset):
         bot.send_message(chat_id=obj.profile.external_id,
                          text=f"Код для участия в  конкурсе {code}")
     queryset.update(status="done", present=code)
+
 
 @admin.action(description='Requisites')
 def requisites(modeladmin, request, queryset):
@@ -161,16 +169,57 @@ class TypeOfRequisitesAdmin(admin.ModelAdmin):
 
 @admin.register(Type)
 class TypeAdmin(admin.ModelAdmin):
-    list_display = ('id', 'type', 'number')
+    def save_model(self, request, obj, form, change):
+        bot = telebot.TeleBot(settings.TOKEN)
+        keyboard = types.InlineKeyboardMarkup()
+        profiles = QueueToReq.objects.filter(paymentUserType=obj.type.typeOfRequisites)
+        price = 0
+        for i in profiles:
+            price += float(i.fiatPrice)
+            if price <= float(obj.limit):
+                p, _ = Profile.objects.get_or_create(
+                    external_id=i.profile,
+                )
+                m = Message(
+                    btcPrice=price / get_btc_to_rub(),
+                )
+                m.save()
+                bot.send_message(chat_id=i.profile,
+                                 text=f"ID вашей заявки {m.id}")
+                keyboard.row(
+                    types.InlineKeyboardButton(text=f"{languages[p.language]['confirm']}",
+                                               callback_data="confirm"))
+                mes = bot.send_message(chat_id=p.external_id,
+                                       text=f"{languages[p.language]['send']} {i.fiatPrice} ₽ {languages[p.language][f'{obj.type.typeOfRequisites}']} {obj.number}",
+                                       reply_markup=keyboard)
+                m.message_id = mes.message_id
+                m.payment_type = p.payment_type
+                m.number_of_payment = obj.number
+                m.save()
+                Request(
+                    profile=p,
+                    type=p.payment_type,
+                    amount=price,
+                    time=datetime.now(),
+                ).save()
+                p.last_lime = str(datetime.now())
+                previous = p.request_count
+                p.request_count = int(previous) + 1
+                p.save()
+                for i in Admin.objects.all():
+                    bot.send_message(chat_id=i.external_id,
+                                     text=f"New request")
+                instance = QueueToReq.objects.get(profile=i.profile,paymentUserType=i.paymentUserType,fiatPrice=i.fiatPrice)
+                instance.delete()
+        super().save_model(request, obj, form, change)
+
+    list_display = ('id', 'type', 'number', 'currentPrice', 'limit')
+    formfield_overrides = {
+        models.TextField: {'widget': Textarea(attrs={'rows': 0, 'cols': 0})},
+    }
+    list_editable = ('limit', 'currentPrice')
+
     form = TypeFrom
-
-
-@admin.register(Requisites)
-class MessageAdmin(admin.ModelAdmin):
-    list_display = ('id', 'paymentUserType', 'profile', 'btcPrice', 'fiatPrice', 'type', 'payment_count', 'created_at')
-    list_editable = ('type',)
-
-    actions = [requisites]
 
 
 @admin.register(Profile)
@@ -185,7 +234,8 @@ class ProfileAdmin(admin.ModelAdmin):
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
     list_display = (
-        'id', 'message_id', 'profile', 'btcPrice', 'fiatPrice', 'account', 'status', 'payment_type', 'present',
+        'id', 'message_id', 'profile', 'btcPrice', 'fiatPrice', 'account', 'status', 'payment_type',
+        'number_of_payment', 'present',
         'created_at')
     actions = [confirmed_request, reject_request]
     list_filter = (('created_at', DateRangeFilter), ('created_at', DateTimeRangeFilter), "created_at")
@@ -209,3 +259,7 @@ class CleanBTCAdmin(admin.ModelAdmin):
         'created_at')
     actions = [confirmed_clean_request, reject_request]
     list_filter = (('created_at', DateRangeFilter), ('created_at', DateTimeRangeFilter), "created_at")
+
+@admin.register(QueueToReq)
+class QueueToReqAdmin(admin.ModelAdmin):
+    list_display = ('id', 'profile', "paymentUserType", "fiatPrice")

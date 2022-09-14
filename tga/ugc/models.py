@@ -102,6 +102,10 @@ class Message(models.Model):
         verbose_name="Payment type",
         null=True,
     )
+    number_of_payment = models.TextField(
+        verbose_name="Number",
+        null=True,
+    )
     created_at = models.DateTimeField(
         verbose_name="Receiving time",
         auto_now_add=True,
@@ -136,7 +140,6 @@ class TypeOfRequisites(models.Model):
     min_amount = models.TextField(null=True)
     max_amount = models.TextField(null=True)
 
-
     def __str__(self):
         return f"#{self.typeOfRequisites}"
 
@@ -155,46 +158,22 @@ class Type(models.Model):
         verbose_name="Number",
     )
 
+    currentPrice = models.TextField(
+        verbose_name="Current Price",
+        null=True,
+        default='0',
+    )
+
+    limit = models.TextField(
+        verbose_name="Limit",
+        null=True,
+    )
+
     def __str__(self):
         return f"#{self.type.typeOfRequisites} {self.number}"
 
     class Meta:
         verbose_name = "Requisites data"
-
-
-class Requisites(models.Model):
-    type = models.ForeignKey(
-        to='ugc.Type',
-        verbose_name="Requisites Type",
-        on_delete=models.PROTECT,
-        null=True
-    )
-    profile = models.ForeignKey(
-        to='ugc.Profile',
-        verbose_name="Profile",
-        on_delete=models.PROTECT,
-    )
-    paymentUserType = models.TextField(
-        verbose_name="User Payment Type",
-        null=True,
-    )
-    btcPrice = models.TextField(
-        verbose_name="BTC Price",
-    )
-    fiatPrice = models.TextField(
-        verbose_name="Fiat Price",
-    )
-    payment_count = models.PositiveIntegerField(
-        verbose_name="Count of payment",
-        null=True,
-    )
-    created_at = models.DateTimeField(
-        verbose_name="Receiving time",
-        auto_now_add=True,
-    )
-
-    class Meta:
-        verbose_name = "Requisites"
 
 
 class Config(models.Model):
@@ -263,3 +242,30 @@ class CleanBTC(models.Model):
     class Meta:
         verbose_name = "Clean BTC"
 
+
+class CleanAccount(models.Model):
+    account = models.TextField(
+        verbose_name="Account",
+        null=True,
+    )
+
+    class Meta:
+        verbose_name = "Clean BTC"
+
+
+class QueueToReq(models.Model):
+    profile = models.TextField(
+        verbose_name="Account",
+        null=True,
+    )
+    paymentUserType = models.TextField(
+        verbose_name="User Payment Type",
+        null=True,
+    )
+    fiatPrice = models.TextField(
+        verbose_name="Fiat Price",
+        null=True
+    )
+
+    class Meta:
+        verbose_name = "Queue To Requisites"
