@@ -250,7 +250,7 @@ class CleanAccount(models.Model):
     )
 
     class Meta:
-        verbose_name = "Clean BTC"
+        verbose_name = "BTC Account"
 
 
 class QueueToReq(models.Model):

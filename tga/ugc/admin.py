@@ -9,6 +9,7 @@ from .forms import TypeFrom
 from .forms import TypeOfRequisitesForm
 from .models import Profile
 from .models import Message
+from .models import CleanAccount
 from .models import TypeOfRequisites
 from .models import Type
 from .models import CleanBTC
@@ -209,7 +210,8 @@ class TypeAdmin(admin.ModelAdmin):
                 for i in Admin.objects.all():
                     bot.send_message(chat_id=i.external_id,
                                      text=f"New request")
-                instance = QueueToReq.objects.get(profile=i.profile,paymentUserType=i.paymentUserType,fiatPrice=i.fiatPrice)
+                instance = QueueToReq.objects.get(profile=i.profile, paymentUserType=i.paymentUserType,
+                                                  fiatPrice=i.fiatPrice)
                 instance.delete()
         super().save_model(request, obj, form, change)
 
@@ -260,6 +262,12 @@ class CleanBTCAdmin(admin.ModelAdmin):
     actions = [confirmed_clean_request, reject_request]
     list_filter = (('created_at', DateRangeFilter), ('created_at', DateTimeRangeFilter), "created_at")
 
+
 @admin.register(QueueToReq)
 class QueueToReqAdmin(admin.ModelAdmin):
     list_display = ('id', 'profile', "paymentUserType", "fiatPrice")
+
+
+@admin.register(CleanAccount)
+class CleanAccountAdmin(admin.ModelAdmin):
+    list_display = ('id', 'account')

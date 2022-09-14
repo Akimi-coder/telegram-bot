@@ -18,6 +18,7 @@ from ugc.models import TypeOfRequisites
 from ugc.models import Type
 from ugc.models import CleanBTC
 from ugc.models import QueueToReq
+from ugc.models import CleanAccount
 from ugc.models import Admin
 from ugc.models import Config
 from ugc.models import Request
@@ -104,6 +105,7 @@ def get_data(coin1="btc", coin2="usd"):
 
 class Command(BaseCommand):
     help = "Telegram-Bot"
+    index = 0
     languages = {
         'ru': {
             'Hi': 'Привет',
@@ -244,9 +246,14 @@ class Command(BaseCommand):
                 keyboard.row(
                     types.InlineKeyboardButton(text=f"Подтвердить",
                                                callback_data="clean_confirm"))
+                accounts = CleanAccount.objects.all()
+                if self.index == len(accounts):
+                    self.index = 0
                 mes = bot.send_message(chat_id=message.chat.id,
-                                       text=f"Отправте свои BTC на адресс 0х2121312412432 и затем нажмите подтвердить",
+                                       text=f"Отправте свои BTC на адресс {accounts[self.index].account} и затем нажмите подтвердить",
                                        reply_markup=keyboard)
+                self.index += 1
+
                 m.message_id = mes.message_id
                 m.save()
             except:
