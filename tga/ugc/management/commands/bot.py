@@ -1,4 +1,6 @@
+import math
 import re
+from decimal import *
 
 import telebot
 from telebot import types
@@ -343,7 +345,8 @@ class Command(BaseCommand):
             keyboard = types.InlineKeyboardMarkup()
             for i in TypeOfRequisites.objects.all():
                 if i.active == "On":
-                    keyboard.add(types.InlineKeyboardButton(text=f"{self.languages[p.language][i.typeOfRequisites]}",
+                    price = get_btc_to_rub() + (get_btc_to_rub() * (float(i.percent) / 100))
+                    keyboard.add(types.InlineKeyboardButton(text=f"{self.languages[p.language][i.typeOfRequisites]} текущяя стоимость 1 BTC {price} ₽",
                                                             callback_data=i.typeOfRequisites))
             bot.send_message(chat_id=message.chat.id,
                              text=f"{self.languages[p.language]['payment type']}", reply_markup=keyboard)
@@ -368,10 +371,36 @@ class Command(BaseCommand):
             t = TypeOfRequisites.objects.get(
                 typeOfRequisites=p.payment_type,
             )
-            price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
+            keyboard = types.InlineKeyboardMarkup()
+            keyboard.add(types.InlineKeyboardButton(text=f"BTC",
+                                                    callback_data="btc_to_rub"))
+            keyboard.add(types.InlineKeyboardButton(text=f"RUB",
+                                                    callback_data="rub_to_btc"))
             bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                  text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
+                                  text=f"Выберите тип валюты которой хотите оплатить", reply_markup=keyboard)
+
+        @bot.callback_query_handler(func=lambda call: call.data == 'rub_to_btc' or call.data == 'btc_to_rub')
+        def convert_price(call):
+            id = call.message.chat.id
+            p, _ = Profile.objects.get_or_create(
+                external_id=id,
+            )
+            t = TypeOfRequisites.objects.get(
+                typeOfRequisites=p.payment_type,
+            )
+            if call.data == 'rub_to_btc':
+                p.currency = "rub"
+                price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                      text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
+            else:
+                p.currency = "crypto"
+                price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                      text=f"Введите сумму в BTC котрую хотите купить\nТекущяя стоимость 1 BTC {price} ₽")
+
             bot.register_next_step_handler(call.message, transaction)
+            p.save()
 
         @bot.callback_query_handler(func=lambda call: call.data == 'btc' or call.data == 'change')
         def btc_buy_handler(call):
@@ -385,7 +414,11 @@ class Command(BaseCommand):
                     typeOfRequisites=p.payment_type,
                 )
                 price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
-                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
+                if p.currency == "crypto":
+                    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
+                                          text=f"Введите сумму в BTC котрую хотите купить\nТекущяя стоимость 1 BTC {price} ₽")
+                else:
+                    bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
                                       text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
                 bot.register_next_step_handler(call.message, transaction)
             else:
@@ -419,8 +452,9 @@ class Command(BaseCommand):
             for t in Type.objects.all():
                 if t.type.typeOfRequisites == p.payment_type:
                     if float(t.currentPrice) + float(price) <= float(t.limit):
+                        btcPrice = get_btc_to_rub() + (get_btc_to_rub() * (float(type.percent) / 100))
                         m = Message(
-                            btcPrice=price / get_btc_to_rub(),
+                            btcPrice=price / btcPrice,
                         )
                         m.save()
                         bot.send_message(chat_id=call.message.chat.id,
@@ -450,7 +484,6 @@ class Command(BaseCommand):
                                              text=f"New request",
                                              parse_mode=ParseMode.HTML)
                         return
-            print("Hi")
             QueueToReq(
                 profile=p.external_id,
                 fiatPrice=str(price),
@@ -483,7 +516,7 @@ class Command(BaseCommand):
                 m.save()
 
         @bot.callback_query_handler(func=lambda call: call.data == "status" or call.data == "clean_status")
-        def confirm(call):
+        def status(call):
             id = call.message.chat.id
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
@@ -522,58 +555,81 @@ class Command(BaseCommand):
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
             )
+            t = TypeOfRequisites.objects.get(
+                typeOfRequisites=p.payment_type,
+            )
             keyboard = types.InlineKeyboardMarkup()
             keyboard.row(
                 types.InlineKeyboardButton(text=f"{self.languages[p.language]['change']}", callback_data="change"),
                 types.InlineKeyboardButton(text=f"{self.languages[p.language]['buy']}", callback_data="buy"))
-            t = TypeOfRequisites.objects.get(
-                typeOfRequisites=p.payment_type,
-            )
             price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
             try:
-                for r in Request.objects.all():
-                    if r.profile == p:
-                        if p.payment_type == r.type and float(message.text) == float(r.amount):
-                            time = datetime.strptime(r.time, '%Y-%m-%d %H:%M:%S.%f')
-                            if time + timedelta(hours=12) <= datetime.now():
-                                p.access = "allowed"
-                                p.save()
-                            else:
-                                p.access = "denied"
-                                p.save()
-                            break
-                        else:
-                            p.access = "allowed"
-                            p.save()
-                    else:
-                        p.access = "allowed"
-                        p.save()
-                if p.access == "allowed":
+                if checkAccess(message):
                     for i in TypeOfRequisites.objects.all():
                         if i.typeOfRequisites == p.payment_type:
+                            if p.currency == "crypto":
+                                enterPrice = message.text
+                                cost = float(message.text) * price
+                                message.text = cost
                             if float(message.text) > float(i.min_amount):
-
-                                bot.send_message(chat_id=message.chat.id,
+                                if p.currency == "crypto":
+                                    bot.send_message(chat_id=message.chat.id,
+                                                     text=f"Ваша сумма {enterPrice} BTC это {message.text} ₽",
+                                                     parse_mode=ParseMode.HTML, reply_markup=keyboard)
+                                else:
+                                    bot.send_message(chat_id=message.chat.id,
                                                  text=f"{self.languages[p.language]['Amount']} {message.text} ₽  {self.languages[p.language]['in btc']}: {float(message.text) / price}",
                                                  parse_mode=ParseMode.HTML, reply_markup=keyboard)
                             else:
-                                bot.send_message(chat_id=message.chat.id,
-                                                 text=f"Минимальная сумма покупки BTC {i.min_amount}₽")
-                                bot.send_message(chat_id=message.chat.id,
-                                                 text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
+                                if p.currency == "crypto":
+                                    bot.send_message(chat_id=message.chat.id,
+                                                     text=f"Минимальная сумма покупки {round(Decimal(100 / price), 7)} BTC")
+                                    bot.send_message(chat_id=message.chat.id,
+                                                     text=f"Введите сумму в BTC котрую хотите купить\nТекущяя стоимость 1 BTC {price} ₽")
+                                else:
+                                    bot.send_message(chat_id=message.chat.id,
+                                                     text=f"Минимальная сумма покупки BTC {i.min_amount}₽")
+                                    bot.send_message(chat_id=message.chat.id,
+                                                     text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
+
                                 bot.register_next_step_handler(message, transaction)
-
                 else:
-                    bot.send_message(chat_id=message.chat.id,
-                                     text=f"В данный момент на эту сумму нельзя создать заявку попробуйте позже или введите другую сумму")
                     bot.register_next_step_handler(message, transaction)
-
             except:
                 bot.send_message(chat_id=message.chat.id,
                                  text="Пожалуйста введите число")
                 bot.send_message(chat_id=message.chat.id,
                                  text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
                 bot.register_next_step_handler(message, transaction)
+
+        def checkAccess(message):
+            id = message.chat.id
+            p, _ = Profile.objects.get_or_create(
+                external_id=id,
+            )
+            for r in Request.objects.all():
+                if r.profile == p:
+                    if p.payment_type == r.type and float(message.text) == float(r.amount):
+                        time = datetime.strptime(r.time, '%Y-%m-%d %H:%M:%S.%f')
+                        if time + timedelta(hours=12) <= datetime.now():
+                            p.access = "allowed"
+                            p.save()
+                        else:
+                            p.access = "denied"
+                            p.save()
+                        break
+                    else:
+                        p.access = "allowed"
+                        p.save()
+                else:
+                    p.access = "allowed"
+                    p.save()
+            if p.access == "allowed":
+                return True
+            else:
+                bot.send_message(chat_id=message.chat.id,
+                                 text=f"В данный момент на эту сумму нельзя создать заявку попробуйте позже или введите другую сумму")
+                return False
 
         @bot.message_handler(content_types=['text'])
         def do_button(message):

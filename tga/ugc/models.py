@@ -37,6 +37,10 @@ class Profile(models.Model):
         choices=CHOICES,
         null=True,
     )
+    currency = models.TextField(
+        verbose_name="Currency",
+        null=True,
+    )
     access = models.TextField(
         verbose_name='Access',
         null=True,

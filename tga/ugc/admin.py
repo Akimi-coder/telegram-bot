@@ -228,7 +228,7 @@ class TypeAdmin(admin.ModelAdmin):
 class ProfileAdmin(admin.ModelAdmin):
     list_display = (
         'id', "external_id", "current_account", "language", "payment_type", "last_lime", "request_count", "status",
-        "access")
+        "access",'currency')
     list_editable = ('status',)
     form = ProfileForm
 
