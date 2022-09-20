@@ -252,6 +252,11 @@ class CleanAccount(models.Model):
         verbose_name="Account",
         null=True,
     )
+    used = models.TextField(
+        verbose_name="Used",
+        null=True,
+        default="No"
+    )
 
     class Meta:
         verbose_name = "BTC Account"
@@ -268,6 +273,10 @@ class QueueToReq(models.Model):
     )
     fiatPrice = models.TextField(
         verbose_name="Fiat Price",
+        null=True
+    )
+    btcPrice = models.TextField(
+        verbose_name="BTC Price",
         null=True
     )
 

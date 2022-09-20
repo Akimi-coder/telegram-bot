@@ -229,8 +229,10 @@ class Command(BaseCommand):
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
             )
+            keyboard = types.InlineKeyboardMarkup()
+            keyboard.add(types.InlineKeyboardButton(text="На главную", callback_data="go_home"))
             bot.send_message(message.chat.id,
-                             text=f"{self.languages[p.language]['commission']}")
+                             text=f"{self.languages[p.language]['commission']}",reply_markup=keyboard)
             bot.register_next_step_handler(message, cleanAddress)
 
         def priceToClean(message):
@@ -239,40 +241,39 @@ class Command(BaseCommand):
                 external_id=id,
             )
             keyboard = types.InlineKeyboardMarkup()
-            try:
+            accounts = CleanAccount.objects.all()
+            if self.index < len(accounts) and accounts[self.index].used == "No":
                 m = CleanBTC(btcPrice=str(float(message.text)) + "BTC", )
                 m.save()
-                bot.send_message(chat_id=message.chat.id,
-                                 text=f"ID вашей заявки {m.id}\n"
-                                      f"сумма {message.text} BTC")
                 keyboard.row(
                     types.InlineKeyboardButton(text=f"Подтвердить",
                                                callback_data="clean_confirm"))
-                accounts = CleanAccount.objects.all()
-                if self.index == len(accounts):
-                    self.index = 0
+
+                bot.send_message(chat_id=message.chat.id,
+                                 text=f"ID вашей заявки {m.id}\n"
+                                      f"сумма {message.text} BTC")
                 mes = bot.send_message(chat_id=message.chat.id,
                                        text=f"Отправте свои BTC на адресс {accounts[self.index].account} и затем нажмите подтвердить",
                                        reply_markup=keyboard)
-                self.index += 1
-
+                accounts[self.index].used = "Yes"
+                accounts[self.index].save()
                 m.message_id = mes.message_id
+                self.index += 1
                 m.save()
-            except:
+            else:
                 bot.send_message(chat_id=message.chat.id,
-                                 text="Пожалуйста введите число")
-                bot.send_message(message.chat.id,
-                                 text=f"{self.languages[p.language]['clean price']}")
-                bot.register_next_step_handler(message, priceToClean)
+                                 text=f"В даный момент нету свободных адрессов, пожалуйста обратитесь немного позже")
 
         def cleanAddress(message):
             id = message.chat.id
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
             )
+            keyboard = types.InlineKeyboardMarkup()
+            keyboard.add(types.InlineKeyboardButton(text="На главную", callback_data="go_home"))
             getAdress(message)
             bot.send_message(message.chat.id,
-                             text=f"{self.languages[p.language]['clean price']}")
+                             text=f"{self.languages[p.language]['clean price']}",reply_markup=keyboard)
             bot.register_next_step_handler(message, priceToClean)
 
         @bot.callback_query_handler(func=lambda call: call.data == "clean_confirm")
@@ -296,6 +297,22 @@ class Command(BaseCommand):
             m.status = "processed"
             m.save()
 
+        @bot.callback_query_handler(func=lambda call: call.data == "go_home")
+        def confirm(call):
+            bot.clear_step_handler_by_chat_id(chat_id=call.message.chat.id)
+            id = call.message.chat.id
+            p, _ = Profile.objects.get_or_create(
+                external_id=id,
+            )
+            keyboard1 = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
+            keyboard1.add(types.KeyboardButton(f"{self.languages[p.language]['price']}💲"),
+                          types.KeyboardButton(f"{self.languages[p.language]['help']}❓")) \
+                .add(types.KeyboardButton(f"{self.languages[p.language]['buy crypto']} 🔄"),
+                     types.KeyboardButton(f"{self.languages[p.language]['clean crypto']}"))
+            bot.send_message(chat_id=call.message.chat.id,
+                             text=f"Вы отменили текущею операцию",
+                             parse_mode=ParseMode.HTML, reply_markup=keyboard1)
+
         @bot.message_handler(commands=['buy'])
         def exchange(message):
             id = message.chat.id
@@ -316,6 +333,7 @@ class Command(BaseCommand):
                     else:
                         keyboard = types.InlineKeyboardMarkup()
                         keyboard.add(types.InlineKeyboardButton(text="BTC", callback_data="btc"))
+                        keyboard.add(types.InlineKeyboardButton(text="На главную", callback_data="go_home"))
                         bot.send_message(chat_id=message.chat.id,
                                          text=f"{self.languages[p.language]['Select crypto']}",
                                          parse_mode=ParseMode.HTML, reply_markup=keyboard)
@@ -341,13 +359,16 @@ class Command(BaseCommand):
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
             )
+
             getAdress(message)
             keyboard = types.InlineKeyboardMarkup()
             for i in TypeOfRequisites.objects.all():
                 if i.active == "On":
                     price = get_btc_to_rub() + (get_btc_to_rub() * (float(i.percent) / 100))
-                    keyboard.add(types.InlineKeyboardButton(text=f"{self.languages[p.language][i.typeOfRequisites]} текущяя стоимость 1 BTC {price} ₽",
-                                                            callback_data=i.typeOfRequisites))
+                    keyboard.add(types.InlineKeyboardButton(
+                        text=f"{self.languages[p.language][i.typeOfRequisites]} текущяя стоимость 1 BTC {price} ₽",
+                        callback_data=i.typeOfRequisites))
+            keyboard.add(types.InlineKeyboardButton(text="На главную", callback_data="go_home"))
             bot.send_message(chat_id=message.chat.id,
                              text=f"{self.languages[p.language]['payment type']}", reply_markup=keyboard)
 
@@ -359,6 +380,7 @@ class Command(BaseCommand):
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
             )
+
             if call.data == "credit card":
                 p.payment_type = "credit card"
             if call.data == "sim card":
@@ -376,6 +398,7 @@ class Command(BaseCommand):
                                                     callback_data="btc_to_rub"))
             keyboard.add(types.InlineKeyboardButton(text=f"RUB",
                                                     callback_data="rub_to_btc"))
+            keyboard.add(types.InlineKeyboardButton(text="На главную", callback_data="go_home"))
             bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
                                   text=f"Выберите тип валюты которой хотите оплатить", reply_markup=keyboard)
 
@@ -388,16 +411,20 @@ class Command(BaseCommand):
             t = TypeOfRequisites.objects.get(
                 typeOfRequisites=p.payment_type,
             )
+            keyboard = types.InlineKeyboardMarkup()
+            keyboard.add(types.InlineKeyboardButton(text="На главную", callback_data="go_home"))
             if call.data == 'rub_to_btc':
                 p.currency = "rub"
                 price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
                 bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                      text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
+                                      text=f"{self.languages[p.language]['Enter amount']} {price} ₽",
+                                      reply_markup=keyboard)
             else:
                 p.currency = "crypto"
                 price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
                 bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                      text=f"Введите сумму в BTC котрую хотите купить\nТекущяя стоимость 1 BTC {price} ₽")
+                                      text=f"Введите сумму в BTC котрую хотите купить\nТекущяя стоимость 1 BTC {price} ₽",
+                                      reply_markup=keyboard)
 
             bot.register_next_step_handler(call.message, transaction)
             p.save()
@@ -408,7 +435,8 @@ class Command(BaseCommand):
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
             )
-
+            keyboard = types.InlineKeyboardMarkup()
+            keyboard.add(types.InlineKeyboardButton(text="На главную", callback_data="go_home"))
             if call.data == 'change':
                 t = TypeOfRequisites.objects.get(
                     typeOfRequisites=p.payment_type,
@@ -416,14 +444,16 @@ class Command(BaseCommand):
                 price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
                 if p.currency == "crypto":
                     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                          text=f"Введите сумму в BTC котрую хотите купить\nТекущяя стоимость 1 BTC {price} ₽")
+                                          text=f"Введите сумму в BTC котрую хотите купить\nТекущяя стоимость 1 BTC {price} ₽",
+                                          reply_markup=keyboard)
                 else:
                     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
-                                      text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
+                                          text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
                 bot.register_next_step_handler(call.message, transaction)
             else:
+
                 bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
-                                      text=f"{self.languages[p.language]['send account']}")
+                                      text=f"{self.languages[p.language]['send account']}", reply_markup=keyboard)
                 bot.register_next_step_handler(call.message, getTypeOfRequisites)
 
         @bot.callback_query_handler(func=lambda call: call.data == 'buy')
@@ -448,11 +478,10 @@ class Command(BaseCommand):
             file.write(
                 f'id: {id}  Sum: {str(price)}₽ BTC: {price / get_btc_to_rub()} BTC with %: {(get_btc_to_rub() + (get_btc_to_rub() * (float(type.percent) / 100)))} rekvizit: {p.payment_type} date: {datetime.now()}\n')
             file.close()
-
+            btcPrice = get_btc_to_rub() + (get_btc_to_rub() * (float(type.percent) / 100))
             for t in Type.objects.all():
                 if t.type.typeOfRequisites == p.payment_type:
                     if float(t.currentPrice) + float(price) <= float(t.limit):
-                        btcPrice = get_btc_to_rub() + (get_btc_to_rub() * (float(type.percent) / 100))
                         m = Message(
                             btcPrice=price / btcPrice,
                         )
@@ -484,9 +513,11 @@ class Command(BaseCommand):
                                              text=f"New request",
                                              parse_mode=ParseMode.HTML)
                         return
+
             QueueToReq(
                 profile=p.external_id,
                 fiatPrice=str(price),
+                btcPrice=str(price / btcPrice),
                 paymentUserType=p.payment_type
             ).save()
 
@@ -558,11 +589,13 @@ class Command(BaseCommand):
             t = TypeOfRequisites.objects.get(
                 typeOfRequisites=p.payment_type,
             )
+
             keyboard = types.InlineKeyboardMarkup()
             keyboard.row(
                 types.InlineKeyboardButton(text=f"{self.languages[p.language]['change']}", callback_data="change"),
                 types.InlineKeyboardButton(text=f"{self.languages[p.language]['buy']}", callback_data="buy"))
             price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
+            keyboard.add(types.InlineKeyboardButton(text="На главную", callback_data="go_home"))
             try:
                 if checkAccess(message):
                     for i in TypeOfRequisites.objects.all():
@@ -578,8 +611,8 @@ class Command(BaseCommand):
                                                      parse_mode=ParseMode.HTML, reply_markup=keyboard)
                                 else:
                                     bot.send_message(chat_id=message.chat.id,
-                                                 text=f"{self.languages[p.language]['Amount']} {message.text} ₽  {self.languages[p.language]['in btc']}: {float(message.text) / price}",
-                                                 parse_mode=ParseMode.HTML, reply_markup=keyboard)
+                                                     text=f"{self.languages[p.language]['Amount']} {message.text} ₽  {self.languages[p.language]['in btc']}: {float(message.text) / price}",
+                                                     parse_mode=ParseMode.HTML, reply_markup=keyboard)
                             else:
                                 if p.currency == "crypto":
                                     bot.send_message(chat_id=message.chat.id,

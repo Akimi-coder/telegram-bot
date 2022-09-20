@@ -80,7 +80,7 @@ def confirmed_request(modeladmin, request, queryset):
             else:
                 chekcher = True
 
-        if (chekcher):
+        if chekcher:
             break
     for obj in queryset:
         payment = Type.objects.get(
@@ -105,18 +105,18 @@ def confirmed_clean_request(modeladmin, request, queryset):
 
     code = ""
     chekcher = False
-    while (True):
+    while True:
         for index in range(code_length):
             code = code + random.choice(characters)
 
         for i in CleanBTC.objects.all():
-            if (i.present == code):
+            if i.present == code:
                 chekcher = False
                 break
             else:
                 chekcher = True
 
-        if (chekcher):
+        if chekcher:
             break
     for obj in queryset:
         bot.send_message(chat_id=obj.profile.external_id,
@@ -124,6 +124,20 @@ def confirmed_clean_request(modeladmin, request, queryset):
         bot.send_message(chat_id=obj.profile.external_id,
                          text=f"Код для участия в  конкурсе {code}")
     queryset.update(status="done", present=code)
+
+
+@admin.action(description='Confirmed without code')
+def confirmed_without_code(modeladmin, request, queryset):
+    bot = telebot.TeleBot(settings.TOKEN)
+    for obj in queryset:
+        payment = Type.objects.get(
+            number=obj.number_of_payment,
+        )
+        payment.currentPrice = str(float(payment.currentPrice) + float(obj.fiatPrice[:obj.fiatPrice.index(' ')]))
+        payment.save()
+        bot.send_message(chat_id=obj.profile.external_id,
+                         text=f"{languages[obj.profile.language]['confirmed']}")
+    queryset.update(status="done", present="None")
 
 
 @admin.action(description='Requisites')
@@ -182,7 +196,7 @@ class TypeAdmin(admin.ModelAdmin):
                     external_id=i.profile,
                 )
                 m = Message(
-                    btcPrice=price / get_btc_to_rub(),
+                    btcPrice=i.btcPrice,
                 )
                 m.save()
                 bot.send_message(chat_id=i.profile,
@@ -228,7 +242,7 @@ class TypeAdmin(admin.ModelAdmin):
 class ProfileAdmin(admin.ModelAdmin):
     list_display = (
         'id', "external_id", "current_account", "language", "payment_type", "last_lime", "request_count", "status",
-        "access",'currency')
+        "access", 'currency')
     list_editable = ('status',)
     form = ProfileForm
 
@@ -239,7 +253,7 @@ class MessageAdmin(admin.ModelAdmin):
         'id', 'message_id', 'profile', 'btcPrice', 'fiatPrice', 'account', 'status', 'payment_type',
         'number_of_payment', 'present',
         'created_at')
-    actions = [confirmed_request, reject_request]
+    actions = [confirmed_request, reject_request,confirmed_without_code]
     list_filter = (('created_at', DateRangeFilter), ('created_at', DateTimeRangeFilter), "created_at")
 
 
@@ -265,9 +279,9 @@ class CleanBTCAdmin(admin.ModelAdmin):
 
 @admin.register(QueueToReq)
 class QueueToReqAdmin(admin.ModelAdmin):
-    list_display = ('id', 'profile', "paymentUserType", "fiatPrice")
+    list_display = ('id', 'profile', "paymentUserType", "fiatPrice","btcPrice")
 
 
 @admin.register(CleanAccount)
 class CleanAccountAdmin(admin.ModelAdmin):
-    list_display = ('id', 'account')
+    list_display = ('id', 'account', 'used')

@@ -105,3 +105,10 @@ id: 366330380  Sum: 200000.0₽ BTC: 0.16928365083892746 BTC with %: 1417738.8 r
 id: 366330380  Sum: 300000.0₽ BTC: 0.2541926967049001 BTC with %: 1416248.4 rekvizit: credit card date: 2022-09-16 08:40:00.159834
 id: 366330380  Sum: 158675.616₽ BTC: 0.132 BTC with %: 1442505.6 rekvizit: credit card date: 2022-09-16 11:59:15.708115
 id: 366330380  Sum: 222.0₽ BTC: 0.0001846786591331084 BTC with %: 1442505.6 rekvizit: credit card date: 2022-09-16 12:01:00.821347
+id: 366330380  Sum: 695986.2₽ BTC: 0.6 BTC with %: 1391972.4 rekvizit: credit card date: 2022-09-20 11:03:21.492397
+id: 366330380  Sum: 696663.6₽ BTC: 0.6 BTC with %: 1393327.2 rekvizit: credit card date: 2022-09-20 11:07:53.503976
+id: 366330380  Sum: 696663.6₽ BTC: 0.6 BTC with %: 1393327.2 rekvizit: credit card date: 2022-09-20 11:09:31.432512
+id: 366330380  Sum: 695883.0₽ BTC: 0.6 BTC with %: 1391766.0 rekvizit: credit card date: 2022-09-20 11:25:50.828589
+id: 366330380  Sum: 30644776.799999997₽ BTC: 26.4 BTC with %: 1392944.4 rekvizit: credit card date: 2022-09-20 12:53:07.825929
+id: 366330380  Sum: 310606531.2₽ BTC: 267.59999999999997 BTC with %: 1392854.4 rekvizit: credit card date: 2022-09-20 12:56:19.220890
+id: 366330380  Sum: 2122.0₽ BTC: 0.00183112410482452 BTC with %: 1274736.1 rekvizit: qiwi date: 2022-09-20 13:18:29.960580
