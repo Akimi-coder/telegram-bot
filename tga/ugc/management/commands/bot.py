@@ -604,7 +604,7 @@ class Command(BaseCommand):
                                 enterPrice = message.text
                                 cost = float(message.text) * price
                                 message.text = cost
-                            if float(message.text) > float(i.min_amount):
+                            if float(i.min_amount) < float(message.text) < float(i.max_amount):
                                 if p.currency == "crypto":
                                     bot.send_message(chat_id=message.chat.id,
                                                      text=f"Ваша сумма {enterPrice} BTC это {message.text} ₽",
@@ -620,7 +620,11 @@ class Command(BaseCommand):
                                     bot.send_message(chat_id=message.chat.id,
                                                      text=f"Введите сумму в BTC котрую хотите купить\nТекущяя стоимость 1 BTC {price} ₽")
                                 else:
-                                    bot.send_message(chat_id=message.chat.id,
+                                    if float(message.text) > float(i.max_amount):
+                                        bot.send_message(chat_id=message.chat.id,
+                                                         text=f"Минимальная сумма покупки BTC {i.max_amount}₽")
+                                    else:
+                                        bot.send_message(chat_id=message.chat.id,
                                                      text=f"Минимальная сумма покупки BTC {i.min_amount}₽")
                                     bot.send_message(chat_id=message.chat.id,
                                                      text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
