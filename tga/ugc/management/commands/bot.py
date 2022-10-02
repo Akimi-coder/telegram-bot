@@ -448,7 +448,7 @@ class Command(BaseCommand):
                                           reply_markup=keyboard)
                 else:
                     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
-                                          text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
+                                          text=f"{self.languages[p.language]['Enter amount']} {price} ₽",reply_markup=keyboard)
                 bot.register_next_step_handler(call.message, transaction)
             else:
 
@@ -596,47 +596,52 @@ class Command(BaseCommand):
                 types.InlineKeyboardButton(text=f"{self.languages[p.language]['buy']}", callback_data="buy"))
             price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
             keyboard.add(types.InlineKeyboardButton(text="На главную", callback_data="go_home"))
-            try:
-                if checkAccess(message):
-                    for i in TypeOfRequisites.objects.all():
-                        if i.typeOfRequisites == p.payment_type:
+            if checkAccess(message):
+                for i in TypeOfRequisites.objects.all():
+                    if i.typeOfRequisites == p.payment_type:
+                        if p.currency == "crypto":
+                            enterPrice = message.text
+                            cost = float(message.text) * price
+                            message.text = cost
+                        if float(i.min_amount) < float(message.text) < float(i.max_amount):
                             if p.currency == "crypto":
-                                enterPrice = message.text
-                                cost = float(message.text) * price
-                                message.text = cost
-                            if float(i.min_amount) < float(message.text) < float(i.max_amount):
-                                if p.currency == "crypto":
-                                    bot.send_message(chat_id=message.chat.id,
-                                                     text=f"Ваша сумма {enterPrice} BTC это {message.text} ₽",
-                                                     parse_mode=ParseMode.HTML, reply_markup=keyboard)
-                                else:
-                                    bot.send_message(chat_id=message.chat.id,
-                                                     text=f"{self.languages[p.language]['Amount']} {message.text} ₽  {self.languages[p.language]['in btc']}: {float(message.text) / price}",
-                                                     parse_mode=ParseMode.HTML, reply_markup=keyboard)
+                                bot.send_message(chat_id=message.chat.id,
+                                                 text=f"Ваша сумма {enterPrice} BTC это {message.text} ₽",
+                                                 parse_mode=ParseMode.HTML, reply_markup=keyboard)
                             else:
-                                if p.currency == "crypto":
+                                bot.send_message(chat_id=message.chat.id,
+                                                 text=f"{self.languages[p.language]['Amount']} {message.text} ₽  {self.languages[p.language]['in btc']}: {float(message.text) / price}",
+                                                 parse_mode=ParseMode.HTML, reply_markup=keyboard)
+                        else:
+                            if p.currency == "crypto":
+                                if float(message.text) > float(i.max_amount):
                                     bot.send_message(chat_id=message.chat.id,
-                                                     text=f"Минимальная сумма покупки {round(Decimal(100 / price), 7)} BTC")
-                                    bot.send_message(chat_id=message.chat.id,
-                                                     text=f"Введите сумму в BTC котрую хотите купить\nТекущяя стоимость 1 BTC {price} ₽")
+                                                     text=f"Максимальная сумма покупки {round(Decimal(float(i.max_amount) / price), 7)} BTC")
                                 else:
-                                    if float(message.text) > float(i.max_amount):
-                                        bot.send_message(chat_id=message.chat.id,
-                                                         text=f"Минимальная сумма покупки BTC {i.max_amount}₽")
-                                    else:
-                                        bot.send_message(chat_id=message.chat.id,
-                                                     text=f"Минимальная сумма покупки BTC {i.min_amount}₽")
                                     bot.send_message(chat_id=message.chat.id,
-                                                     text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
+                                                     text=f"Минимальная сумма покупки {round(Decimal(float(i.min_amount) / price), 7)} BTC")
+                                bot.send_message(chat_id=message.chat.id,
+                                                 text=f"Введите сумму в BTC котрую хотите купить\nТекущяя стоимость 1 BTC {price} ₽",reply_markup=keyboard)
+                            else:
+                                if float(message.text) > float(i.max_amount):
+                                    bot.send_message(chat_id=message.chat.id,
+                                                     text=f"Максимальная сумма покупки BTC {i.max_amount}₽")
+                                else:
+                                    bot.send_message(chat_id=message.chat.id,
+                                                     text=f"Минимальная сумма покупки BTC {i.min_amount}₽")
+                                bot.send_message(chat_id=message.chat.id,
+                                                 text=f"{self.languages[p.language]['Enter amount']} {price} ₽",reply_markup=keyboard)
 
-                                bot.register_next_step_handler(message, transaction)
-                else:
-                    bot.register_next_step_handler(message, transaction)
+                            bot.register_next_step_handler(message, transaction)
+            else:
+                bot.register_next_step_handler(message, transaction)
+            try:
+                i = 0
             except:
                 bot.send_message(chat_id=message.chat.id,
                                  text="Пожалуйста введите число")
                 bot.send_message(chat_id=message.chat.id,
-                                 text=f"{self.languages[p.language]['Enter amount']} {price} ₽")
+                                 text=f"{self.languages[p.language]['Enter amount']} {price} ₽",reply_markup=keyboard)
                 bot.register_next_step_handler(message, transaction)
 
         def checkAccess(message):
