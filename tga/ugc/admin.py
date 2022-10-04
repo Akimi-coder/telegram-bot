@@ -140,6 +140,15 @@ def confirmed_without_code(modeladmin, request, queryset):
     queryset.update(status="done", present="None")
 
 
+@admin.action(description='Confirmed without code')
+def confirmed_clean_without_code(modeladmin, request, queryset):
+    bot = telebot.TeleBot(settings.TOKEN)
+    for obj in queryset:
+        bot.send_message(chat_id=obj.profile.external_id,
+                         text=f"{languages[obj.profile.language]['confirmed']}")
+    queryset.update(status="done")
+
+
 @admin.action(description='Requisites')
 def requisites(modeladmin, request, queryset):
     bot = telebot.TeleBot(settings.TOKEN)
@@ -273,7 +282,7 @@ class CleanBTCAdmin(admin.ModelAdmin):
     list_display = (
         'id', 'message_id', 'profile', 'btcPrice', 'account', 'status', 'present',
         'created_at')
-    actions = [confirmed_clean_request, reject_request]
+    actions = [confirmed_clean_request, reject_request,confirmed_clean_without_code]
     list_filter = (('created_at', DateRangeFilter), ('created_at', DateTimeRangeFilter), "created_at")
 
 
