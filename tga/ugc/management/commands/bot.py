@@ -242,27 +242,28 @@ class Command(BaseCommand):
             )
             keyboard = types.InlineKeyboardMarkup()
             accounts = CleanAccount.objects.all()
-            if self.index < len(accounts) and accounts[self.index].used == "No":
-                m = CleanBTC(btcPrice=str(float(message.text)) + "BTC", )
-                m.save()
-                keyboard.row(
-                    types.InlineKeyboardButton(text=f"Подтвердить",
-                                               callback_data="clean_confirm"))
+            for i in range(len(accounts)):
+                if accounts[i].used == "No":
+                    m = CleanBTC(btcPrice=str(float(message.text)) + "BTC", )
+                    m.save()
+                    keyboard.row(
+                        types.InlineKeyboardButton(text=f"Подтвердить",
+                                                   callback_data="clean_confirm"))
 
-                bot.send_message(chat_id=message.chat.id,
-                                 text=f"ID вашей заявки {m.id}\n"
-                                      f"сумма {message.text} BTC")
-                mes = bot.send_message(chat_id=message.chat.id,
-                                       text=f"Отправте свои BTC на адресс {accounts[self.index].account} и затем нажмите подтвердить",
-                                       reply_markup=keyboard)
-                accounts[self.index].used = "Yes"
-                accounts[self.index].save()
-                m.message_id = mes.message_id
-                self.index += 1
-                m.save()
-            else:
-                bot.send_message(chat_id=message.chat.id,
-                                 text=f"В даный момент нету свободных адрессов, пожалуйста обратитесь немного позже")
+                    bot.send_message(chat_id=message.chat.id,
+                                     text=f"ID вашей заявки {m.id}\n"
+                                          f"сумма {message.text} BTC")
+                    mes = bot.send_message(chat_id=message.chat.id,
+                                           text=f"Отправте свои BTC на адресс {accounts[i].account} и затем нажмите подтвердить",
+                                           reply_markup=keyboard)
+                    accounts[i].used = "Yes"
+                    accounts[i].save()
+                    m.save()
+                    break
+                if i == len(accounts) - 1:
+                    bot.send_message(chat_id=message.chat.id,
+                                     text=f"В даный момент нету свободных адрессов, пожалуйста обратитесь немного позже")
+
 
         def cleanAddress(message):
             id = message.chat.id
