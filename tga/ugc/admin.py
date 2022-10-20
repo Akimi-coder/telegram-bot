@@ -86,7 +86,8 @@ def confirmed_request(modeladmin, request, queryset):
         payment = Type.objects.get(
             number=obj.number_of_payment,
         )
-        payment.currentPrice = str(float(payment.currentPrice) + float(obj.fiatPrice[:obj.fiatPrice.index(' ')]))
+        price = float(payment.currentPrice) + float(obj.fiatPrice[:obj.fiatPrice.index(' ')])
+        payment.currentPrice = str(round(price,1))
         payment.save()
         bot.send_message(chat_id=obj.profile.external_id,
                          text=f"{languages[obj.profile.language]['confirmed']}")

@@ -41,11 +41,10 @@ def get_info():
 
 
 def get_btc_to_rub(coin1="BTC", coin2="RUB"):
-    r = requests.get("https://www.coingecko.com/en/coins/bitcoin/rub")
-    soup = BeautifulSoup(r.content, "html.parser")
-
-    res = soup.findAll("span", class_="no-wrap")
-    return float(res[0].text[1:].replace(',', ''))
+    key = "https://api.binance.com/api/v3/ticker/price?symbol=BTCRUB"
+    data = requests.get(key)
+    data = data.json()
+    return float(data['price'])
 
 
 # Инфа о парах за последние 24 часа
@@ -114,16 +113,16 @@ class Command(BaseCommand):
             'Hi Bot': 'Это крипто-обменный бот',
             'Select crypto': 'Выберите криптовалюту котрую хотите купить',
             'Wait requisite': 'Пожалуйста подождите администратор даст вам реквизиты для оплаты, отправляйте строго указанную сумму для быстрого обмена',
-            'Enter amount': 'Введите сумму в ₽ на котрую хотите купить \nТекущяя стоимость 1 BTC ',
+            'Enter amount': 'Введите сумму в ₽ на котрую хотите купить \nТекущая стоимость 1 BTC ',
             'Wait request': 'Пожалуйста подождите администратор проверит ваш запрос',
             'Amount': 'Ваша сумма',
             'in btc': 'в BTC',
-            'price': 'Цена',
+            'price': 'Курс',
             'help': 'Помощь',
             'buy crypto': 'Купить',
             'total bids': '',
             'total trade': '',
-            'send account': 'Пожалуйста введите адресс своего bitcoin кошелька',
+            'send account': 'Пожалуйста введите адрес своего bitcoin кошелька',
             'reject': 'отклонен',
             'done': 'выполнен',
             'request': 'Запрос',
@@ -232,7 +231,7 @@ class Command(BaseCommand):
             keyboard = types.InlineKeyboardMarkup()
             keyboard.add(types.InlineKeyboardButton(text="На главную", callback_data="go_home"))
             bot.send_message(message.chat.id,
-                             text=f"{self.languages[p.language]['commission']}",reply_markup=keyboard)
+                             text=f"{self.languages[p.language]['commission']}", reply_markup=keyboard)
             bot.register_next_step_handler(message, cleanAddress)
 
         def priceToClean(message):
@@ -261,9 +260,9 @@ class Command(BaseCommand):
                     m.save()
                     break
                 if i == len(accounts) - 1:
+                    print(f"Index {i}")
                     bot.send_message(chat_id=message.chat.id,
                                      text=f"В даный момент нету свободных адрессов, пожалуйста обратитесь немного позже")
-
 
         def cleanAddress(message):
             id = message.chat.id
@@ -274,7 +273,7 @@ class Command(BaseCommand):
             keyboard.add(types.InlineKeyboardButton(text="На главную", callback_data="go_home"))
             getAdress(message)
             bot.send_message(message.chat.id,
-                             text=f"{self.languages[p.language]['clean price']}",reply_markup=keyboard)
+                             text=f"{self.languages[p.language]['clean price']}", reply_markup=keyboard)
             bot.register_next_step_handler(message, priceToClean)
 
         @bot.callback_query_handler(func=lambda call: call.data == "clean_confirm")
@@ -311,7 +310,7 @@ class Command(BaseCommand):
                 .add(types.KeyboardButton(f"{self.languages[p.language]['buy crypto']} 🔄"),
                      types.KeyboardButton(f"{self.languages[p.language]['clean crypto']}"))
             bot.send_message(chat_id=call.message.chat.id,
-                             text=f"Вы отменили текущею операцию",
+                             text=f"Вы в главном меню",
                              parse_mode=ParseMode.HTML, reply_markup=keyboard1)
 
         @bot.message_handler(commands=['buy'])
@@ -367,7 +366,7 @@ class Command(BaseCommand):
                 if i.active == "On":
                     price = get_btc_to_rub() + (get_btc_to_rub() * (float(i.percent) / 100))
                     keyboard.add(types.InlineKeyboardButton(
-                        text=f"{self.languages[p.language][i.typeOfRequisites]} текущяя стоимость 1 BTC {price} ₽",
+                        text=f"{self.languages[p.language][i.typeOfRequisites]} текущая стоимость 1 BTC {price} ₽",
                         callback_data=i.typeOfRequisites))
             keyboard.add(types.InlineKeyboardButton(text="На главную", callback_data="go_home"))
             bot.send_message(chat_id=message.chat.id,
@@ -395,13 +394,13 @@ class Command(BaseCommand):
                 typeOfRequisites=p.payment_type,
             )
             keyboard = types.InlineKeyboardMarkup()
-            keyboard.add(types.InlineKeyboardButton(text=f"BTC",
+            keyboard.add(types.InlineKeyboardButton(text=f"Рассчитать сумму по количеству BTC",
                                                     callback_data="btc_to_rub"))
-            keyboard.add(types.InlineKeyboardButton(text=f"RUB",
+            keyboard.add(types.InlineKeyboardButton(text=f"Рассчитать сумму по количеству RUB",
                                                     callback_data="rub_to_btc"))
             keyboard.add(types.InlineKeyboardButton(text="На главную", callback_data="go_home"))
             bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                  text=f"Выберите тип валюты которой хотите оплатить", reply_markup=keyboard)
+                                  text=f"Выберите сколько отдаете, или сколько получаете", reply_markup=keyboard)
 
         @bot.callback_query_handler(func=lambda call: call.data == 'rub_to_btc' or call.data == 'btc_to_rub')
         def convert_price(call):
@@ -424,7 +423,7 @@ class Command(BaseCommand):
                 p.currency = "crypto"
                 price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
                 bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                      text=f"Введите сумму в BTC котрую хотите купить\nТекущяя стоимость 1 BTC {price} ₽",
+                                      text=f"Введите сумму в BTC котрую хотите купить\nТекущая стоимость 1 BTC {price} ₽",
                                       reply_markup=keyboard)
 
             bot.register_next_step_handler(call.message, transaction)
@@ -445,11 +444,12 @@ class Command(BaseCommand):
                 price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
                 if p.currency == "crypto":
                     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                          text=f"Введите сумму в BTC котрую хотите купить\nТекущяя стоимость 1 BTC {price} ₽",
+                                          text=f"Введите сумму в BTC котрую хотите купить\nТекущая стоимость 1 BTC {price} ₽",
                                           reply_markup=keyboard)
                 else:
                     bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
-                                          text=f"{self.languages[p.language]['Enter amount']} {price} ₽",reply_markup=keyboard)
+                                          text=f"{self.languages[p.language]['Enter amount']} {price} ₽",
+                                          reply_markup=keyboard)
                 bot.register_next_step_handler(call.message, transaction)
             else:
 
@@ -622,7 +622,8 @@ class Command(BaseCommand):
                                     bot.send_message(chat_id=message.chat.id,
                                                      text=f"Минимальная сумма покупки {round(Decimal(float(i.min_amount) / price), 7)} BTC")
                                 bot.send_message(chat_id=message.chat.id,
-                                                 text=f"Введите сумму в BTC котрую хотите купить\nТекущяя стоимость 1 BTC {price} ₽",reply_markup=keyboard)
+                                                 text=f"Введите сумму в BTC котрую хотите купить\nТекущяя стоимость 1 BTC {price} ₽",
+                                                 reply_markup=keyboard)
                             else:
                                 if float(message.text) > float(i.max_amount):
                                     bot.send_message(chat_id=message.chat.id,
@@ -631,7 +632,8 @@ class Command(BaseCommand):
                                     bot.send_message(chat_id=message.chat.id,
                                                      text=f"Минимальная сумма покупки BTC {i.min_amount}₽")
                                 bot.send_message(chat_id=message.chat.id,
-                                                 text=f"{self.languages[p.language]['Enter amount']} {price} ₽",reply_markup=keyboard)
+                                                 text=f"{self.languages[p.language]['Enter amount']} {price} ₽",
+                                                 reply_markup=keyboard)
 
                             bot.register_next_step_handler(message, transaction)
             else:
@@ -642,7 +644,7 @@ class Command(BaseCommand):
                 bot.send_message(chat_id=message.chat.id,
                                  text="Пожалуйста введите число")
                 bot.send_message(chat_id=message.chat.id,
-                                 text=f"{self.languages[p.language]['Enter amount']} {price} ₽",reply_markup=keyboard)
+                                 text=f"{self.languages[p.language]['Enter amount']} {price} ₽", reply_markup=keyboard)
                 bot.register_next_step_handler(message, transaction)
 
         def checkAccess(message):
@@ -698,9 +700,9 @@ class Command(BaseCommand):
             price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
             if message.text == f"{self.languages[p.language]['help']}❓":
                 bot.send_message(message.chat.id,
-                                 text=f"Если возникли вопросы обращайтесь к @suppbitpay")
+                                 text=f"В случае возникновения вопросов или сложностей с обменом, пожалуйста, свяжитесь с нами. Связь с поддержкой -> @suppbitpay")
             if message.text == f"{self.languages[p.language]['price']}💲":
-                bot.send_message(message.chat.id, text=f"{price} ₽")
+                bot.send_message(message.chat.id, text=f"Актуальный курс: {price} ₽")
             if message.text == f"{self.languages[p.language]['buy crypto']} 🔄":
                 exchange(message)
             if message.text == f"{self.languages[p.language]['clean crypto']}":
