@@ -112,7 +112,7 @@ class Command(BaseCommand):
             'Hi': 'Привет',
             'Hi Bot': 'Это крипто-обменный бот',
             'Select crypto': 'Выберите криптовалюту котрую хотите купить',
-            'Wait requisite': 'Пожалуйста подождите администратор даст вам реквизиты для оплаты, отправляйте строго указанную сумму для быстрого обмена',
+            'Wait requisite': 'Пожалуйста, подождите, администратор выдаст Вам реквизит для оплаты, отправляйте строго указанную сумму для быстрого обмена',
             'Enter amount': 'Введите сумму в ₽ на котрую хотите купить \nТекущая стоимость 1 BTC ',
             'Wait request': 'Пожалуйста подождите администратор проверит ваш запрос',
             'Amount': 'Ваша сумма',
@@ -122,7 +122,7 @@ class Command(BaseCommand):
             'buy crypto': 'Купить',
             'total bids': '',
             'total trade': '',
-            'send account': 'Пожалуйста введите адрес своего bitcoin кошелька',
+            'send account': 'Пожалуйста, введите адрес своего bitcoin кошелька',
             'reject': 'отклонен',
             'done': 'выполнен',
             'request': 'Запрос',
@@ -239,30 +239,37 @@ class Command(BaseCommand):
             p, _ = Profile.objects.get_or_create(
                 external_id=id,
             )
-            keyboard = types.InlineKeyboardMarkup()
-            accounts = CleanAccount.objects.all()
-            for i in range(len(accounts)):
-                if accounts[i].used == "No":
-                    m = CleanBTC(btcPrice=str(float(message.text)) + "BTC", )
-                    m.save()
-                    keyboard.row(
-                        types.InlineKeyboardButton(text=f"Подтвердить",
-                                                   callback_data="clean_confirm"))
+            try:
+                keyboard = types.InlineKeyboardMarkup()
+                accounts = CleanAccount.objects.all()
+                for i in range(len(accounts)):
+                    if accounts[i].used == "No":
+                        m = CleanBTC(btcPrice=str(float(message.text)) + "BTC", )
+                        m.save()
+                        keyboard.row(
+                            types.InlineKeyboardButton(text=f"Подтвердить",
+                                                       callback_data="clean_confirm"))
 
-                    bot.send_message(chat_id=message.chat.id,
-                                     text=f"ID вашей заявки {m.id}\n"
-                                          f"сумма {message.text} BTC")
-                    mes = bot.send_message(chat_id=message.chat.id,
-                                           text=f"Отправте свои BTC на адресс {accounts[i].account} и затем нажмите подтвердить",
-                                           reply_markup=keyboard)
-                    accounts[i].used = "Yes"
-                    accounts[i].save()
-                    m.save()
-                    break
-                if i == len(accounts) - 1:
-                    print(f"Index {i}")
-                    bot.send_message(chat_id=message.chat.id,
-                                     text=f"В даный момент нету свободных адрессов, пожалуйста обратитесь немного позже")
+                        bot.send_message(chat_id=message.chat.id,
+                                         text=f"ID вашей заявки {m.id}\n"
+                                              f"сумма {message.text} BTC")
+                        mes = bot.send_message(chat_id=message.chat.id,
+                                               text=f"Отправте свои BTC на адресс {accounts[i].account} и затем нажмите подтвердить",
+                                               reply_markup=keyboard)
+                        accounts[i].used = "Yes"
+                        accounts[i].save()
+                        m.save()
+                        break
+                    if i == len(accounts) - 1:
+                        print(f"Index {i}")
+                        bot.send_message(chat_id=message.chat.id,
+                                         text=f"На данный момент нет свободных адресов, пожалуйста, обратитесь немного позже")
+            except:
+                bot.send_message(chat_id=message.chat.id,
+                                 text=f"Неверное значение, пожалуйста введите еще раз.")
+                bot.register_next_step_handler(message, priceToClean)
+
+
 
         def cleanAddress(message):
             id = message.chat.id
@@ -397,7 +404,7 @@ class Command(BaseCommand):
             keyboard.add(types.InlineKeyboardButton(text="На главную", callback_data="go_home"))
             price = get_btc_to_rub() + (get_btc_to_rub() * (float(t.percent) / 100))
             bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id,
-                                  text=f"Укажите желаемую сумму В BTC или RUB",reply_markup=keyboard)
+                                  text=f"Укажите желаемую сумму  BTC или RUB",reply_markup=keyboard)
             bot.register_next_step_handler(call.message, transaction)
 
         @bot.callback_query_handler(func=lambda call: call.data == 'rub_to_btc' or call.data == 'btc_to_rub')
