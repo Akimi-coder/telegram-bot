@@ -17,6 +17,7 @@ from .models import Admin
 from .models import Config
 from .models import Request
 from .models import QueueToReq
+from .models import Transaction
 import telebot
 from django.conf import settings
 from telebot import types
@@ -83,12 +84,10 @@ def confirmed_request(modeladmin, request, queryset):
         if chekcher:
             break
     for obj in queryset:
-        payment = Type.objects.get(
-            number=obj.number_of_payment,
+        payment = Transaction.objects.filter(
+            message_id=obj.message_id
         )
-        price = float(payment.currentPrice) + float(obj.fiatPrice[:obj.fiatPrice.index(' ')])
-        payment.currentPrice = str(round(price,1))
-        payment.save()
+        payment.delete()
         bot.send_message(chat_id=obj.profile.external_id,
                          text=f"{languages[obj.profile.language]['confirmed']}")
         bot.send_message(chat_id=obj.profile.external_id,
@@ -131,11 +130,10 @@ def confirmed_clean_request(modeladmin, request, queryset):
 def confirmed_without_code(modeladmin, request, queryset):
     bot = telebot.TeleBot(settings.TOKEN)
     for obj in queryset:
-        payment = Type.objects.get(
-            number=obj.number_of_payment,
+        payment = Transaction.objects.filter(
+            message_id=obj.message_id
         )
-        payment.currentPrice = str(float(payment.currentPrice) + float(obj.fiatPrice[:obj.fiatPrice.index(' ')]))
-        payment.save()
+        payment.delete()
         bot.send_message(chat_id=obj.profile.external_id,
                          text=f"{languages[obj.profile.language]['confirmed']}")
     queryset.update(status="done", present="None")
@@ -176,6 +174,16 @@ def requisites(modeladmin, request, queryset):
 def reject_request(modeladmin, request, queryset):
     bot = telebot.TeleBot(settings.TOKEN)
     for obj in queryset:
+        payment = Transaction.objects.get(
+            message_id=obj.message_id
+        )
+        print(payment.number)
+        type = Type.objects.get(
+            number=payment.number,
+        )
+        type.currentPrice = float(type.currentPrice) - float(payment.fiatPrice)
+        type.save()
+        payment.delete()
         bot.send_message(chat_id=obj.profile.external_id,
                          text=f"{languages[obj.profile.language]['reject']}")
     queryset.update(status="reject")
@@ -263,7 +271,7 @@ class MessageAdmin(admin.ModelAdmin):
         'id', 'message_id', 'profile', 'btcPrice', 'fiatPrice', 'account', 'status', 'payment_type',
         'number_of_payment', 'present',
         'created_at')
-    actions = [confirmed_request, reject_request,confirmed_without_code]
+    actions = [confirmed_request, reject_request, confirmed_without_code]
     list_filter = (('created_at', DateRangeFilter), ('created_at', DateTimeRangeFilter), "created_at")
 
 
@@ -283,15 +291,20 @@ class CleanBTCAdmin(admin.ModelAdmin):
     list_display = (
         'id', 'message_id', 'profile', 'btcPrice', 'account', 'status', 'present',
         'created_at')
-    actions = [confirmed_clean_request, reject_request,confirmed_clean_without_code]
+    actions = [confirmed_clean_request, reject_request, confirmed_clean_without_code]
     list_filter = (('created_at', DateRangeFilter), ('created_at', DateTimeRangeFilter), "created_at")
 
 
 @admin.register(QueueToReq)
 class QueueToReqAdmin(admin.ModelAdmin):
-    list_display = ('id', 'profile', "paymentUserType", "fiatPrice","btcPrice")
+    list_display = ('id', 'profile', "paymentUserType", "fiatPrice", "btcPrice")
 
 
 @admin.register(CleanAccount)
 class CleanAccountAdmin(admin.ModelAdmin):
     list_display = ('id', 'account', 'used')
+
+
+@admin.register(Transaction)
+class CleanAccountAdmin(admin.ModelAdmin):
+    list_display = ('message_id', 'fiatPrice','type','number')

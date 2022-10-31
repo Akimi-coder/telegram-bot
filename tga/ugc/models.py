@@ -282,3 +282,22 @@ class QueueToReq(models.Model):
 
     class Meta:
         verbose_name = "Queue To Requisites"
+
+
+class Transaction(models.Model):
+    message_id = models.TextField(
+        verbose_name="Id",
+        null=True
+    )
+    fiatPrice = models.TextField(
+        verbose_name="Fiat Price",
+        null=True
+    )
+    type = models.TextField(
+        verbose_name="Requisites Type",
+        null=True,
+    )
+    number = models.TextField(
+        verbose_name="Number",
+        null=True
+    )

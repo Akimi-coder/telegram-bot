@@ -24,6 +24,7 @@ from ugc.models import CleanAccount
 from ugc.models import Admin
 from ugc.models import Config
 from ugc.models import Request
+from ugc.models import Transaction
 import csv
 import requests
 from bs4 import BeautifulSoup
@@ -492,6 +493,8 @@ class Command(BaseCommand):
                             btcPrice=price / btcPrice,
                         )
                         m.save()
+                        t.currentPrice = str(float(t.currentPrice) + float(price))
+                        t.save()
                         bot.send_message(chat_id=call.message.chat.id,
                                          text=f"ID вашей заявки {m.id}")
                         keyboard.row(
@@ -504,6 +507,12 @@ class Command(BaseCommand):
                         m.payment_type = p.payment_type
                         m.number_of_payment = t.number
                         m.save()
+                        Transaction(
+                            message_id=mes.message_id,
+                            fiatPrice=price,
+                            type=p.payment_type,
+                            number=t.number
+                        ).save()
                         Request(
                             profile=p,
                             type=p.payment_type,
