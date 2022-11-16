@@ -374,7 +374,7 @@ class Command(BaseCommand):
                 if i.active == "On":
                     price = get_btc_to_rub() + (get_btc_to_rub() * (float(i.percent) / 100))
                     keyboard.add(types.InlineKeyboardButton(
-                        text=f"{self.languages[p.language][i.typeOfRequisites]} текущая стоимость 1 BTC {price} ₽",
+                        text=f"{self.languages[p.language][i.typeOfRequisites]} (курс {price} ₽)",
                         callback_data=i.typeOfRequisites))
             keyboard.add(types.InlineKeyboardButton(text="На главную", callback_data="go_home"))
             bot.send_message(chat_id=message.chat.id,
