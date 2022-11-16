@@ -552,7 +552,7 @@ class Command(BaseCommand):
                 bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.id,
                                       text=f"{self.languages[p.language]['Wait request']}",
                                       parse_mode=ParseMode.HTML, reply_markup=keyboard)
-                m, _ = Message.objects.get(
+                m = Message.objects.get(
                     message_id=call.message.message_id,
                 )
                 m.profile = p
