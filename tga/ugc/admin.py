@@ -32,7 +32,6 @@ from datetime import datetime, timedelta
 def get_btc_to_rub(coin1="BTC", coin2="RUB"):
     r = requests.get("https://www.coingecko.com/en/coins/bitcoin/rub")
     soup = BeautifulSoup(r.content, "html.parser")
-
     res = soup.findAll("span", class_="no-wrap")
     return float(res[0].text[1:].replace(',', ''))
 
